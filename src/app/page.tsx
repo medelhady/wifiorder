@@ -13,6 +13,7 @@ type WifiRequest = {
   region: string | null;
   notes: string | null;
   status: string;
+  source: string | null;
   attachments: Attachment[];
   created_at: string;
 };
@@ -124,6 +125,12 @@ export default function Home() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
 
+  const [preview, setPreview] = useState<{
+    url: string;
+    label: string;
+    name: string;
+  } | null>(null);
+
   const [noteId, setNoteId] = useState<string | null>(null);
   const [noteNumber, setNoteNumber] = useState<number | null>(null);
   const [noteText, setNoteText] = useState("");
@@ -149,6 +156,14 @@ export default function Home() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setPreview(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -364,7 +379,25 @@ export default function Home() {
             <tbody>
               {requests.map((r) => (
                 <tr key={r.id}>
-                  <td style={{ ...td, fontWeight: 700 }}>#{r.request_number}</td>
+                  <td style={{ ...td, fontWeight: 700 }}>
+                    #{r.request_number}
+                    {r.source === "whatsapp" && (
+                      <div
+                        style={{
+                          marginTop: 4,
+                          fontSize: 11,
+                          fontWeight: 400,
+                          color: "#15803d",
+                          background: "#dcfce7",
+                          borderRadius: 4,
+                          padding: "1px 6px",
+                          display: "inline-block",
+                        }}
+                      >
+                        واتساب
+                      </div>
+                    )}
+                  </td>
                   <td style={td}>{r.customer_name}</td>
                   <td style={td}>{r.beneficiary_number}</td>
                   <td style={td}>{r.phone ?? "—"}</td>
@@ -372,21 +405,28 @@ export default function Home() {
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {r.attachments.map((a, i) =>
                         a.url ? (
-                          <a
+                          <button
                             key={i}
-                            href={a.url}
-                            target="_blank"
-                            rel="noreferrer"
+                            type="button"
+                            onClick={() =>
+                              setPreview({
+                                url: a.url as string,
+                                label: FILE_LABELS[a.type] ?? "مرفق",
+                                name: a.name,
+                              })
+                            }
                             style={{
                               border: "1px solid #ddd",
                               borderRadius: 6,
                               padding: "2px 8px",
                               fontSize: 12,
                               whiteSpace: "nowrap",
+                              background: "#fff",
+                              cursor: "pointer",
                             }}
                           >
                             {FILE_LABELS[a.type] ?? "مرفق"}
-                          </a>
+                          </button>
                         ) : (
                           <span key={i} style={{ fontSize: 12 }}>
                             {FILE_LABELS[a.type] ?? a.name}
@@ -441,6 +481,91 @@ export default function Home() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {preview && (
+        <div
+          onClick={() => setPreview(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.65)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            zIndex: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              width: "100%",
+              maxWidth: 900,
+              maxHeight: "92vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                padding: "10px 16px",
+                borderBottom: "1px solid #eee",
+              }}
+            >
+              <strong>{preview.label}</strong>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <a href={preview.url} target="_blank" rel="noreferrer">
+                  فتح في صفحة جديدة
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreview(null)}
+                  style={{ padding: "4px 12px", cursor: "pointer" }}
+                >
+                  إغلاق ✕
+                </button>
+              </div>
+            </div>
+            <div
+              style={{
+                flex: 1,
+                overflow: "auto",
+                background: "#f3f4f6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 300,
+              }}
+            >
+              {preview.name.toLowerCase().endsWith(".pdf") ? (
+                <iframe
+                  src={preview.url}
+                  title={preview.label}
+                  style={{ width: "100%", height: "78vh", border: 0 }}
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={preview.url}
+                  alt={preview.label}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "78vh",
+                    objectFit: "contain",
+                  }}
+                />
+              )}
+            </div>
+          </div>
         </div>
       )}
 
