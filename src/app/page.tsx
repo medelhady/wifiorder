@@ -13,7 +13,7 @@ type WifiRequest = {
   phone2: string | null;
   code1: string | null;
   code2: string | null;
-  moughataa: string | null;
+  modem_code: string | null;
   region: string | null;
   notes: string | null;
   status: string;
@@ -25,7 +25,8 @@ type WifiRequest = {
 type Me = {
   username: string;
   role: "admin" | "user";
-  moughataas: string[];
+  restricted: boolean;
+  modemCodes: string[];
   can_add: boolean;
   can_edit: boolean;
   can_change_status: boolean;
@@ -40,7 +41,7 @@ type EditForm = {
   phone2: string;
   code1: string;
   code2: string;
-  moughataa: string;
+  modem_code: string;
   region: string;
   notes: string;
 };
@@ -130,7 +131,7 @@ export default function Home() {
     phone2: "",
     code1: "",
     code2: "",
-    moughataa: "",
+    modem_code: "",
     region: "",
     notes: "",
   });
@@ -210,6 +211,19 @@ export default function Home() {
     load();
   }
 
+  async function changeModem(id: string, modem_code: string) {
+    const res = await fetch(`/api/requests/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ modem_code }),
+    });
+    if (!res.ok) {
+      const json = await res.json();
+      alert(json.error ?? "حدث خطأ");
+    }
+    load();
+  }
+
   function startEdit(r: WifiRequest) {
     setEditingId(r.id);
     setEditNumber(r.request_number);
@@ -222,7 +236,7 @@ export default function Home() {
       phone2: r.phone2 ?? "",
       code1: r.code1 ?? "",
       code2: r.code2 ?? "",
-      moughataa: r.moughataa ?? "",
+      modem_code: r.modem_code ?? "",
       region: r.region ?? "",
       notes: r.notes ?? "",
     });
@@ -275,7 +289,7 @@ export default function Home() {
     load();
   }
 
-  const allowed = me?.moughataas ?? [];
+  const codes = me?.modemCodes ?? [];
 
   return (
     <main
@@ -303,6 +317,7 @@ export default function Home() {
               {me.role === "admin" ? "الأدمن" : me.username}
             </span>
           )}
+          {me?.role === "admin" && <a href="/modem-codes">أكواد المودم</a>}
           {me?.role === "admin" && <a href="/users">إدارة المستخدمين</a>}
           <form method="POST" action="/api/logout">
             <button type="submit" style={{ padding: "4px 12px" }}>
@@ -332,11 +347,14 @@ export default function Home() {
           <input name="national_id" placeholder="الرقم الوطني (اختياري)" style={input} />
           <input name="code1" placeholder="الكود الأول على داية موريتل (اختياري)" style={input} />
           <input name="code2" placeholder="الكود الثاني (اختياري)" style={input} />
-          <select name="moughataa" required defaultValue="" style={input}>
-            <option value="" disabled>
-              اختر المقاطعة
-            </option>
-            {allowed.map((m) => (
+          <select
+            name="modem_code"
+            required={me.restricted}
+            defaultValue=""
+            style={input}
+          >
+            <option value="">كود المودم</option>
+            {codes.map((m) => (
               <option key={m} value={m}>
                 {m}
               </option>
@@ -391,7 +409,7 @@ export default function Home() {
                 <th style={th}>الجوال</th>
                 <th style={th}>الأكواد</th>
                 <th style={th}>المرفقات</th>
-                <th style={th}>المقاطعة</th>
+                <th style={th}>كود المودم</th>
                 <th style={th}>المنطقة</th>
                 <th style={th}>الملاحظات</th>
                 <th style={th}>الحالة</th>
@@ -471,7 +489,27 @@ export default function Home() {
                       )}
                     </div>
                   </td>
-                  <td style={td}>{r.moughataa ?? "—"}</td>
+                  <td style={td}>
+                    {me?.can_edit ? (
+                      <select
+                        value={r.modem_code ?? ""}
+                        onChange={(e) => changeModem(r.id, e.target.value)}
+                        style={{ padding: 4, minWidth: 110 }}
+                      >
+                        <option value="">—</option>
+                        {r.modem_code && !codes.includes(r.modem_code) && (
+                          <option value={r.modem_code}>{r.modem_code}</option>
+                        )}
+                        {codes.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      (r.modem_code ?? "—")
+                    )}
+                  </td>
                   <td style={td}>{r.region ?? "—"}</td>
                   <td style={{ ...td, maxWidth: 240 }}>
                     <div style={{ whiteSpace: "pre-wrap" }}>
@@ -752,14 +790,14 @@ export default function Home() {
               style={input}
             />
             <select
-              value={editForm.moughataa}
+              value={editForm.modem_code}
               onChange={(e) =>
-                setEditForm({ ...editForm, moughataa: e.target.value })
+                setEditForm({ ...editForm, modem_code: e.target.value })
               }
               style={input}
             >
-              <option value="">بدون مقاطعة</option>
-              {allowed.map((m) => (
+              <option value="">بدون كود مودم</option>
+              {codes.map((m) => (
                 <option key={m} value={m}>
                   {m}
                 </option>

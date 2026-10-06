@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/current-user";
+import { getCurrentUser, listModemCodes } from "@/lib/current-user";
 import { getSupabase } from "@/lib/supabase";
 import { hashUserPassword } from "@/lib/password";
-import { MOUGHATAAS } from "@/lib/moughataas";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -24,7 +23,12 @@ export async function GET() {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ users: data ?? [] });
+  // The restriction list is stored in the "moughataas" column and holds modem codes.
+  const users = (data ?? []).map(({ moughataas, ...rest }) => ({
+    ...rest,
+    modem_codes: moughataas ?? [],
+  }));
+  return NextResponse.json({ users });
 }
 
 export async function POST(request: Request) {
@@ -35,8 +39,8 @@ export async function POST(request: Request) {
   const body = await request.json();
   const username = String(body.username ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
-  const moughataas: string[] = Array.isArray(body.moughataas)
-    ? body.moughataas.map(String)
+  const modemCodes: string[] = Array.isArray(body.modem_codes)
+    ? body.modem_codes.map(String)
     : [];
 
   if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
@@ -57,14 +61,15 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  if (!moughataas.every((m) => MOUGHATAAS.includes(m))) {
-    return NextResponse.json({ error: "مقاطعة غير صحيحة" }, { status: 400 });
+  const known = await listModemCodes();
+  if (!modemCodes.every((c) => known.includes(c))) {
+    return NextResponse.json({ error: "كود مودم غير صحيح" }, { status: 400 });
   }
 
   const { error } = await getSupabase().from("app_users").insert({
     username,
     password_hash: hashUserPassword(password),
-    moughataas,
+    moughataas: modemCodes,
     can_add: !!body.can_add,
     can_edit: !!body.can_edit,
     can_change_status: !!body.can_change_status,

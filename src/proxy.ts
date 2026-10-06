@@ -25,7 +25,9 @@ export async function proxy(request: NextRequest) {
   }
 
   const adminOnly =
-    pathname.startsWith("/users") || pathname.startsWith("/api/users");
+    pathname.startsWith("/users") ||
+    pathname.startsWith("/api/users") ||
+    pathname.startsWith("/modem-codes");
   if (adminOnly && session.role !== "admin") {
     if (isApi) {
       return NextResponse.json({ error: "غير مصرّح" }, { status: 403 });

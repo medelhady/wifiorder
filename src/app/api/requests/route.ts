@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSupabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/current-user";
-import { MOUGHATAAS } from "@/lib/moughataas";
 
 const BUCKET = "wifi-attachments";
 
@@ -26,7 +25,7 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (user.restricted) {
-    query = query.in("moughataa", user.moughataas);
+    query = query.in("modem_code", user.modemCodes);
   }
 
   const { data, error } = await query;
@@ -78,7 +77,7 @@ export async function POST(request: Request) {
   const national_id = String(form.get("national_id") ?? "").trim();
   const code1 = String(form.get("code1") ?? "").trim();
   const code2 = String(form.get("code2") ?? "").trim();
-  const moughataa = String(form.get("moughataa") ?? "").trim();
+  const modem_code = String(form.get("modem_code") ?? "").trim();
   const region = String(form.get("region") ?? "").trim();
   const notes = String(form.get("notes") ?? "").trim();
 
@@ -89,14 +88,13 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!MOUGHATAAS.includes(moughataa)) {
-    return NextResponse.json({ error: "اختر المقاطعة" }, { status: 400 });
-  }
-  if (!user.moughataas.includes(moughataa)) {
-    return NextResponse.json(
-      { error: "ليس لديك صلاحية على هذه المقاطعة" },
-      { status: 403 }
-    );
+  // The modem code is optional, except for someone limited to certain codes.
+  if (modem_code) {
+    if (!user.modemCodes.includes(modem_code)) {
+      return NextResponse.json({ error: "كود مودم غير صحيح" }, { status: 400 });
+    }
+  } else if (user.restricted) {
+    return NextResponse.json({ error: "اختر كود المودم" }, { status: 400 });
   }
 
   for (const r of REQUIRED_FILES) {
@@ -136,7 +134,7 @@ export async function POST(request: Request) {
     national_id: national_id || null,
     code1: code1 || null,
     code2: code2 || null,
-    moughataa,
+    modem_code: modem_code || null,
     region: region || null,
     notes: notes || null,
     attachments,

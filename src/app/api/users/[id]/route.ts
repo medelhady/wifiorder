@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/current-user";
 import { getSupabase } from "@/lib/supabase";
 import { hashUserPassword } from "@/lib/password";
-import { MOUGHATAAS } from "@/lib/moughataas";
+import { listModemCodes } from "@/lib/current-user";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -21,13 +21,15 @@ export async function PATCH(
   const body = await request.json();
   const update: Record<string, unknown> = {};
 
-  if (body.moughataas !== undefined) {
-    const list: string[] = Array.isArray(body.moughataas)
-      ? body.moughataas.map(String)
+  if (body.modem_codes !== undefined) {
+    const list: string[] = Array.isArray(body.modem_codes)
+      ? body.modem_codes.map(String)
       : [];
-    if (!list.every((m) => MOUGHATAAS.includes(m))) {
-      return NextResponse.json({ error: "مقاطعة غير صحيحة" }, { status: 400 });
+    const known = await listModemCodes();
+    if (!list.every((c) => known.includes(c))) {
+      return NextResponse.json({ error: "كود مودم غير صحيح" }, { status: 400 });
     }
+    // Stored in the "moughataas" column, which now holds modem codes.
     update.moughataas = list;
   }
   if (body.can_add !== undefined) update.can_add = !!body.can_add;
