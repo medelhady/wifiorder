@@ -109,6 +109,8 @@ export async function POST(request: Request) {
     .insert({
       id,
       customer_name,
+      // The beneficiary number of a WhatsApp request is the customer's WhatsApp number.
+      beneficiary_number: whatsapp_number || null,
       national_id,
       phone,
       phone2: phone2 || null,
