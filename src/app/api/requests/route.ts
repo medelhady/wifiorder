@@ -74,6 +74,10 @@ export async function POST(request: Request) {
   const customer_name = String(form.get("customer_name") ?? "").trim();
   const beneficiary_number = String(form.get("beneficiary_number") ?? "").trim();
   const phone = String(form.get("phone") ?? "").trim();
+  const phone2 = String(form.get("phone2") ?? "").trim();
+  const national_id = String(form.get("national_id") ?? "").trim();
+  const code1 = String(form.get("code1") ?? "").trim();
+  const code2 = String(form.get("code2") ?? "").trim();
   const moughataa = String(form.get("moughataa") ?? "").trim();
   const region = String(form.get("region") ?? "").trim();
   const notes = String(form.get("notes") ?? "").trim();
@@ -128,6 +132,10 @@ export async function POST(request: Request) {
     customer_name,
     beneficiary_number,
     phone: phone || null,
+    phone2: phone2 || null,
+    national_id: national_id || null,
+    code1: code1 || null,
+    code2: code2 || null,
     moughataa,
     region: region || null,
     notes: notes || null,

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSupabase } from "@/lib/supabase";
-import { MOUGHATAAS } from "@/lib/moughataas";
 import { safeEqual } from "@/lib/password";
 
 const BUCKET = "wifi-attachments";
@@ -25,6 +24,10 @@ function digits(v: string): string {
   return v.replace(/\D/g, "");
 }
 
+function text(form: FormData, name: string): string {
+  return String(form.get(name) ?? "").trim();
+}
+
 // استقبال طلب جديد من بوت واتساب
 export async function POST(request: Request) {
   if (!authorized(request)) {
@@ -34,21 +37,29 @@ export async function POST(request: Request) {
   const supabase = getSupabase();
   const form = await request.formData();
 
-  const customer_name = String(form.get("customer_name") ?? "").trim();
-  const beneficiary_number = String(form.get("beneficiary_number") ?? "").trim();
-  const whatsapp_number = digits(String(form.get("whatsapp_number") ?? ""));
-  const moughataa = String(form.get("moughataa") ?? "").trim();
-  const region = String(form.get("region") ?? "").trim();
-  const notes = String(form.get("notes") ?? "").trim();
+  const customer_name = text(form, "customer_name");
+  const national_id = text(form, "national_id");
+  const phone = text(form, "phone");
+  const phone2 = text(form, "phone2");
+  const code1 = text(form, "code1");
+  const code2 = text(form, "code2");
+  const region = text(form, "region");
+  const whatsapp_number = digits(text(form, "whatsapp_number"));
 
-  if (!customer_name || !beneficiary_number) {
+  const missing = [
+    !customer_name && "الاسم",
+    !national_id && "الرقم الوطني",
+    !phone && "رقم الهاتف",
+    !code1 && "الكود الأول",
+    !code2 && "الكود الثاني",
+    !region && "المنطقة",
+  ].filter(Boolean);
+
+  if (missing.length > 0) {
     return NextResponse.json(
-      { error: "اسم العميل ورقم المستفيد مطلوبان" },
+      { error: `بيانات ناقصة: ${missing.join("، ")}` },
       { status: 400 }
     );
-  }
-  if (!MOUGHATAAS.includes(moughataa)) {
-    return NextResponse.json({ error: "مقاطعة غير صحيحة" }, { status: 400 });
   }
 
   for (const r of REQUIRED_FILES) {
@@ -78,7 +89,10 @@ export async function POST(request: Request) {
 
   for (const r of REQUIRED_FILES) {
     const f = form.get(r.field) as File;
-    const ext = f.type === "application/pdf" ? "pdf" : f.type.split("/")[1]?.replace(/[^a-z0-9]/gi, "").slice(0, 8) || "jpg";
+    const ext =
+      f.type === "application/pdf"
+        ? "pdf"
+        : f.type.split("/")[1]?.replace(/[^a-z0-9]/gi, "").slice(0, 8) || "jpg";
     const name = f.name && f.name !== "blob" ? f.name : `${r.field}.${ext}`;
     const path = `${id}/${r.field}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage
@@ -95,11 +109,13 @@ export async function POST(request: Request) {
     .insert({
       id,
       customer_name,
-      beneficiary_number,
-      phone: whatsapp_number || null,
-      moughataa,
-      region: region || null,
-      notes: notes || null,
+      national_id,
+      phone,
+      phone2: phone2 || null,
+      code1,
+      code2,
+      region,
+      whatsapp_number: whatsapp_number || null,
       attachments,
       source: "whatsapp",
     })
@@ -133,7 +149,7 @@ export async function GET(request: Request) {
   const { data, error } = await getSupabase()
     .from("wifi_requests")
     .select("request_number, status, created_at")
-    .eq("phone", phone)
+    .eq("whatsapp_number", phone)
     .order("created_at", { ascending: false })
     .limit(5);
 

@@ -112,34 +112,46 @@ export async function PATCH(
 
   const customer_name = String(body.customer_name ?? "").trim();
   const beneficiary_number = String(body.beneficiary_number ?? "").trim();
+  const national_id = String(body.national_id ?? "").trim();
   const phone = String(body.phone ?? "").trim();
+  const phone2 = String(body.phone2 ?? "").trim();
+  const code1 = String(body.code1 ?? "").trim();
+  const code2 = String(body.code2 ?? "").trim();
   const moughataa = String(body.moughataa ?? "").trim();
   const region = String(body.region ?? "").trim();
   const notes = String(body.notes ?? "").trim();
 
-  if (!customer_name || !beneficiary_number) {
-    return NextResponse.json(
-      { error: "اسم العميل ورقم المستفيد مطلوبان" },
-      { status: 400 }
-    );
+  if (!customer_name) {
+    return NextResponse.json({ error: "اسم العميل مطلوب" }, { status: 400 });
   }
-  if (!MOUGHATAAS.includes(moughataa)) {
+
+  // A request may have no moughataa (those taken over WhatsApp), but only
+  // someone who is not restricted to particular moughataas may leave it empty.
+  if (moughataa) {
+    if (!MOUGHATAAS.includes(moughataa)) {
+      return NextResponse.json({ error: "مقاطعة غير صحيحة" }, { status: 400 });
+    }
+    if (!user.moughataas.includes(moughataa)) {
+      return NextResponse.json(
+        { error: "ليس لديك صلاحية على هذه المقاطعة" },
+        { status: 403 }
+      );
+    }
+  } else if (user.restricted) {
     return NextResponse.json({ error: "اختر المقاطعة" }, { status: 400 });
-  }
-  if (!user.moughataas.includes(moughataa)) {
-    return NextResponse.json(
-      { error: "ليس لديك صلاحية على هذه المقاطعة" },
-      { status: 403 }
-    );
   }
 
   const { data, error } = await supabase
     .from("wifi_requests")
     .update({
       customer_name,
-      beneficiary_number,
+      beneficiary_number: beneficiary_number || null,
+      national_id: national_id || null,
       phone: phone || null,
-      moughataa,
+      phone2: phone2 || null,
+      code1: code1 || null,
+      code2: code2 || null,
+      moughataa: moughataa || null,
       region: region || null,
       notes: notes || null,
       updated_at: new Date().toISOString(),

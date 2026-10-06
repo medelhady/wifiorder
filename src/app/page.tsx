@@ -7,8 +7,12 @@ type WifiRequest = {
   id: string;
   request_number: number;
   customer_name: string;
-  beneficiary_number: string;
+  beneficiary_number: string | null;
+  national_id: string | null;
   phone: string | null;
+  phone2: string | null;
+  code1: string | null;
+  code2: string | null;
   moughataa: string | null;
   region: string | null;
   notes: string | null;
@@ -31,7 +35,11 @@ type Me = {
 type EditForm = {
   customer_name: string;
   beneficiary_number: string;
+  national_id: string;
   phone: string;
+  phone2: string;
+  code1: string;
+  code2: string;
   moughataa: string;
   region: string;
   notes: string;
@@ -117,7 +125,11 @@ export default function Home() {
   const [editForm, setEditForm] = useState<EditForm>({
     customer_name: "",
     beneficiary_number: "",
+    national_id: "",
     phone: "",
+    phone2: "",
+    code1: "",
+    code2: "",
     moughataa: "",
     region: "",
     notes: "",
@@ -204,8 +216,12 @@ export default function Home() {
     setEditError("");
     setEditForm({
       customer_name: r.customer_name,
-      beneficiary_number: r.beneficiary_number,
+      beneficiary_number: r.beneficiary_number ?? "",
+      national_id: r.national_id ?? "",
       phone: r.phone ?? "",
+      phone2: r.phone2 ?? "",
+      code1: r.code1 ?? "",
+      code2: r.code2 ?? "",
       moughataa: r.moughataa ?? "",
       region: r.region ?? "",
       notes: r.notes ?? "",
@@ -312,6 +328,10 @@ export default function Home() {
             style={input}
           />
           <input name="phone" placeholder="رقم الجوال (اختياري)" style={input} />
+          <input name="phone2" placeholder="رقم الجوال الثاني (اختياري)" style={input} />
+          <input name="national_id" placeholder="الرقم الوطني (اختياري)" style={input} />
+          <input name="code1" placeholder="الكود الأول على داية موريتل (اختياري)" style={input} />
+          <input name="code2" placeholder="الكود الثاني (اختياري)" style={input} />
           <select name="moughataa" required defaultValue="" style={input}>
             <option value="" disabled>
               اختر المقاطعة
@@ -367,7 +387,9 @@ export default function Home() {
                 <th style={th}>الرقم</th>
                 <th style={th}>الاسم</th>
                 <th style={th}>رقم المستفيد</th>
+                <th style={th}>الرقم الوطني</th>
                 <th style={th}>الجوال</th>
+                <th style={th}>الأكواد</th>
                 <th style={th}>المرفقات</th>
                 <th style={th}>المقاطعة</th>
                 <th style={th}>المنطقة</th>
@@ -399,8 +421,22 @@ export default function Home() {
                     )}
                   </td>
                   <td style={td}>{r.customer_name}</td>
-                  <td style={td}>{r.beneficiary_number}</td>
-                  <td style={td}>{r.phone ?? "—"}</td>
+                  <td style={td}>{r.beneficiary_number ?? "—"}</td>
+                  <td style={td}>{r.national_id ?? "—"}</td>
+                  <td style={td}>
+                    <div>{r.phone ?? "—"}</div>
+                    {r.phone2 && <div>{r.phone2}</div>}
+                  </td>
+                  <td style={td}>
+                    {r.code1 || r.code2 ? (
+                      <>
+                        <div>{r.code1 ?? "—"}</div>
+                        <div>{r.code2 ?? "—"}</div>
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td style={td}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {r.attachments.map((a, i) =>
@@ -673,7 +709,14 @@ export default function Home() {
                 setEditForm({ ...editForm, beneficiary_number: e.target.value })
               }
               placeholder="رقم المستفيد"
-              required
+              style={input}
+            />
+            <input
+              value={editForm.national_id}
+              onChange={(e) =>
+                setEditForm({ ...editForm, national_id: e.target.value })
+              }
+              placeholder="الرقم الوطني"
               style={input}
             />
             <input
@@ -684,17 +727,38 @@ export default function Home() {
               placeholder="رقم الجوال"
               style={input}
             />
+            <input
+              value={editForm.phone2}
+              onChange={(e) =>
+                setEditForm({ ...editForm, phone2: e.target.value })
+              }
+              placeholder="رقم الجوال الثاني"
+              style={input}
+            />
+            <input
+              value={editForm.code1}
+              onChange={(e) =>
+                setEditForm({ ...editForm, code1: e.target.value })
+              }
+              placeholder="الكود الأول"
+              style={input}
+            />
+            <input
+              value={editForm.code2}
+              onChange={(e) =>
+                setEditForm({ ...editForm, code2: e.target.value })
+              }
+              placeholder="الكود الثاني"
+              style={input}
+            />
             <select
               value={editForm.moughataa}
               onChange={(e) =>
                 setEditForm({ ...editForm, moughataa: e.target.value })
               }
-              required
               style={input}
             >
-              <option value="" disabled>
-                اختر المقاطعة
-              </option>
+              <option value="">بدون مقاطعة</option>
               {allowed.map((m) => (
                 <option key={m} value={m}>
                   {m}
