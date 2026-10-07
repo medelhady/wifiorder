@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 type AppUser = {
   id: string;
   username: string;
-  modem_codes: string[];
   can_add: boolean;
   can_edit: boolean;
   can_change_status: boolean;
@@ -17,7 +16,6 @@ type AppUser = {
 type FormState = {
   username: string;
   password: string;
-  modem_codes: string[];
   can_add: boolean;
   can_edit: boolean;
   can_change_status: boolean;
@@ -27,7 +25,6 @@ type FormState = {
 const emptyForm: FormState = {
   username: "",
   password: "",
-  modem_codes: [],
   can_add: true,
   can_edit: true,
   can_change_status: true,
@@ -56,20 +53,14 @@ const td: React.CSSProperties = {
   fontSize: 14,
 };
 
-function toggleItem(list: string[], v: string): string[] {
-  return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
-}
-
 function Fields({
   form,
   setForm,
   isEdit,
-  codes,
 }: {
   form: FormState;
   setForm: (f: FormState) => void;
   isEdit: boolean;
-  codes: string[];
 }) {
   return (
     <>
@@ -94,35 +85,6 @@ function Fields({
         required={!isEdit}
         style={input}
       />
-
-      <div>
-        <strong>أكواد المودم المسموحة</strong>
-        <div style={{ color: "#666", fontSize: 13, margin: "4px 0 8px" }}>
-          اتركها كلها بدون تحديد لإعطاء صلاحية على كل الأكواد.
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          {codes.length === 0 && (
-            <span style={{ color: "#666", fontSize: 13 }}>
-              لا توجد أكواد بعد. أضفها من صفحة أكواد المودم.
-            </span>
-          )}
-          {codes.map((m) => (
-            <label key={m} style={{ display: "flex", gap: 4 }}>
-              <input
-                type="checkbox"
-                checked={form.modem_codes.includes(m)}
-                onChange={() =>
-                  setForm({
-                    ...form,
-                    modem_codes: toggleItem(form.modem_codes, m),
-                  })
-                }
-              />
-              {m}
-            </label>
-          ))}
-        </div>
-      </div>
 
       <div>
         <strong>الصلاحيات</strong>
@@ -181,17 +143,10 @@ export default function UsersPage() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
 
-  const [codes, setCodes] = useState<string[]>([]);
-
   const load = useCallback(async () => {
-    const [res, codesRes] = await Promise.all([
-      fetch("/api/users"),
-      fetch("/api/modem-codes"),
-    ]);
+    const res = await fetch("/api/users");
     const json = await res.json();
-    const codesJson = await codesRes.json();
     setUsers(json.users ?? []);
-    setCodes(codesJson.codes ?? []);
     setLoading(false);
   }, []);
 
@@ -225,7 +180,6 @@ export default function UsersPage() {
     setEditForm({
       username: u.username,
       password: "",
-      modem_codes: u.modem_codes ?? [],
       can_add: u.can_add,
       can_edit: u.can_edit,
       can_change_status: u.can_change_status,
@@ -242,7 +196,6 @@ export default function UsersPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        modem_codes: editForm.modem_codes,
         can_add: editForm.can_add,
         can_edit: editForm.can_edit,
         can_change_status: editForm.can_change_status,
@@ -298,7 +251,7 @@ export default function UsersPage() {
 
       <form onSubmit={onCreate} style={{ ...box, display: "grid", gap: 12 }}>
         <h2 style={{ margin: 0 }}>إضافة مستخدم</h2>
-        <Fields form={form} setForm={setForm} isEdit={false} codes={codes} />
+        <Fields form={form} setForm={setForm} isEdit={false} />
         <button type="submit" disabled={saving} style={input}>
           {saving ? "جارٍ الحفظ..." : "إضافة المستخدم"}
         </button>
@@ -321,7 +274,6 @@ export default function UsersPage() {
             <thead>
               <tr>
                 <th style={th}>المستخدم</th>
-                <th style={th}>أكواد المودم</th>
                 <th style={th}>الصلاحيات</th>
                 <th style={th}>الحالة</th>
                 <th style={th}>إجراء</th>
@@ -331,11 +283,6 @@ export default function UsersPage() {
               {users.map((u) => (
                 <tr key={u.id}>
                   <td style={{ ...td, fontWeight: 700 }}>{u.username}</td>
-                  <td style={td}>
-                    {u.modem_codes && u.modem_codes.length > 0
-                      ? u.modem_codes.join("، ")
-                      : "الكل"}
-                  </td>
                   <td style={td}>
                     {[
                       u.can_add && "إضافة",
@@ -404,7 +351,7 @@ export default function UsersPage() {
             }}
           >
             <h2 style={{ margin: 0 }}>تعديل المستخدم: {editing.username}</h2>
-            <Fields form={editForm} setForm={setEditForm} isEdit={true} codes={codes} />
+            <Fields form={editForm} setForm={setEditForm} isEdit={true} />
             {editError && (
               <p style={{ margin: 0, color: "crimson" }}>{editError}</p>
             )}

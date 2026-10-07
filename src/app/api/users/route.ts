@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, listModemCodes } from "@/lib/current-user";
+import { getCurrentUser } from "@/lib/current-user";
 import { getSupabase } from "@/lib/supabase";
 import { hashUserPassword } from "@/lib/password";
 
@@ -16,18 +16,14 @@ export async function GET() {
   const { data, error } = await getSupabase()
     .from("app_users")
     .select(
-      "id, username, moughataas, can_add, can_edit, can_change_status, can_add_note, active, created_at"
+      "id, username, can_add, can_edit, can_change_status, can_add_note, active, created_at"
     )
     .order("created_at", { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  // The restriction list is stored in the "moughataas" column and holds modem codes.
-  const users = (data ?? []).map(({ moughataas, ...rest }) => ({
-    ...rest,
-    modem_codes: moughataas ?? [],
-  }));
+  const users = data ?? [];
   return NextResponse.json({ users });
 }
 
@@ -39,9 +35,6 @@ export async function POST(request: Request) {
   const body = await request.json();
   const username = String(body.username ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
-  const modemCodes: string[] = Array.isArray(body.modem_codes)
-    ? body.modem_codes.map(String)
-    : [];
 
   if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
     return NextResponse.json(
@@ -61,15 +54,9 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const known = await listModemCodes();
-  if (!modemCodes.every((c) => known.includes(c))) {
-    return NextResponse.json({ error: "كود مودم غير صحيح" }, { status: 400 });
-  }
-
   const { error } = await getSupabase().from("app_users").insert({
     username,
     password_hash: hashUserPassword(password),
-    moughataas: modemCodes,
     can_add: !!body.can_add,
     can_edit: !!body.can_edit,
     can_change_status: !!body.can_change_status,

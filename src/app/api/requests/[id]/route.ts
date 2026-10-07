@@ -19,18 +19,12 @@ export async function PATCH(
 
   const { data: existing } = await supabase
     .from("wifi_requests")
-    .select("modem_code, notes")
+    .select("notes")
     .eq("id", id)
     .maybeSingle();
 
   if (!existing) {
     return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
-  }
-  if (user.restricted && !user.modemCodes.includes(existing.modem_code ?? "")) {
-    return NextResponse.json(
-      { error: "ليس لديك صلاحية على هذا الطلب" },
-      { status: 403 }
-    );
   }
 
   // 0) إضافة ملاحظة
@@ -65,47 +59,6 @@ export async function PATCH(
       request_id: id,
       status: cur.status,
       note: `إضافة ملاحظة بواسطة ${user.username}`,
-    });
-
-    return NextResponse.json({ ok: true });
-  }
-
-  // 0.5) تعيين كود المودم فقط (من القائمة في الجدول)
-  if (
-    body.modem_code !== undefined &&
-    body.customer_name === undefined &&
-    body.status === undefined
-  ) {
-    if (!user.can_edit) {
-      return NextResponse.json(
-        { error: "ليس لديك صلاحية التعديل" },
-        { status: 403 }
-      );
-    }
-
-    const code = String(body.modem_code ?? "").trim();
-    if (code) {
-      if (!user.modemCodes.includes(code)) {
-        return NextResponse.json({ error: "كود مودم غير صحيح" }, { status: 400 });
-      }
-    } else if (user.restricted) {
-      return NextResponse.json({ error: "اختر كود المودم" }, { status: 400 });
-    }
-
-    const { data: cur, error } = await supabase
-      .from("wifi_requests")
-      .update({ modem_code: code || null, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select("status")
-      .single();
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    await supabase.from("wifi_request_history").insert({
-      request_id: id,
-      status: cur.status,
-      note: `كود المودم: ${code || "—"} (بواسطة ${user.username})`,
     });
 
     return NextResponse.json({ ok: true });
@@ -157,22 +110,11 @@ export async function PATCH(
   const phone2 = String(body.phone2 ?? "").trim();
   const code1 = String(body.code1 ?? "").trim();
   const code2 = String(body.code2 ?? "").trim();
-  const modem_code = String(body.modem_code ?? "").trim();
   const region = String(body.region ?? "").trim();
   const notes = String(body.notes ?? "").trim();
 
   if (!customer_name) {
     return NextResponse.json({ error: "اسم العميل مطلوب" }, { status: 400 });
-  }
-
-  // A request may have no modem code yet, but only someone who is not limited
-  // to particular codes may leave it empty.
-  if (modem_code) {
-    if (!user.modemCodes.includes(modem_code)) {
-      return NextResponse.json({ error: "كود مودم غير صحيح" }, { status: 400 });
-    }
-  } else if (user.restricted) {
-    return NextResponse.json({ error: "اختر كود المودم" }, { status: 400 });
   }
 
   const { data, error } = await supabase
@@ -185,7 +127,6 @@ export async function PATCH(
       phone2: phone2 || null,
       code1: code1 || null,
       code2: code2 || null,
-      modem_code: modem_code || null,
       region: region || null,
       notes: notes || null,
       updated_at: new Date().toISOString(),

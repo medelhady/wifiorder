@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import ModemPicker, { type Modem } from "@/components/ModemPicker";
+import ModemImportModal from "@/components/ModemImportModal";
 
 type Attachment = { type: string; name: string; url: string | null };
 type WifiRequest = {
@@ -25,8 +27,6 @@ type WifiRequest = {
 type Me = {
   username: string;
   role: "admin" | "user";
-  restricted: boolean;
-  modemCodes: string[];
   can_add: boolean;
   can_edit: boolean;
   can_change_status: boolean;
@@ -41,7 +41,6 @@ type EditForm = {
   phone2: string;
   code1: string;
   code2: string;
-  modem_code: string;
   region: string;
   notes: string;
 };
@@ -131,7 +130,6 @@ export default function Home() {
     phone2: "",
     code1: "",
     code2: "",
-    modem_code: "",
     region: "",
     notes: "",
   });
@@ -150,10 +148,24 @@ export default function Home() {
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteError, setNoteError] = useState("");
 
+  const [modems, setModems] = useState<Modem[]>([]);
+  const [stock, setStock] = useState<{
+    remaining: number;
+    total?: number;
+    used?: number;
+  }>({ remaining: 0 });
+  const [importOpen, setImportOpen] = useState(false);
+  const [newModem, setNewModem] = useState("");
+  // Which request the modem picker is open for ("new" = the add form).
+  const [pickFor, setPickFor] = useState<
+    "new" | { id: string; number: number; current: string | null } | null
+  >(null);
+
   const load = useCallback(async () => {
-    const [meRes, reqRes] = await Promise.all([
+    const [meRes, reqRes, modemRes] = await Promise.all([
       fetch("/api/me"),
       fetch("/api/requests"),
+      fetch("/api/modem-codes"),
     ]);
     if (meRes.status === 401 || reqRes.status === 401) {
       window.location.href = "/login";
@@ -161,8 +173,15 @@ export default function Home() {
     }
     const meJson = await meRes.json();
     const reqJson = await reqRes.json();
+    const modemJson = await modemRes.json();
     setMe(meJson.user ?? null);
     setRequests(reqJson.requests ?? []);
+    setModems(modemJson.modems ?? []);
+    setStock({
+      remaining: modemJson.remaining ?? 0,
+      total: modemJson.total,
+      used: modemJson.used,
+    });
     setLoading(false);
   }, []);
 
@@ -183,9 +202,11 @@ export default function Home() {
     const form = e.currentTarget;
     setSaving(true);
     setMessage("");
+    const formData = new FormData(form);
+    if (newModem) formData.append("modem_code", newModem);
     const res = await fetch("/api/requests", {
       method: "POST",
-      body: new FormData(form),
+      body: formData,
     });
     const json = await res.json();
     setSaving(false);
@@ -194,7 +215,8 @@ export default function Home() {
       return;
     }
     form.reset();
-    setMessage("تم حفظ الطلب");
+    setNewModem("");
+    setMessage(json.warning ? `تم حفظ الطلب${json.warning}` : "تم حفظ الطلب");
     load();
   }
 
@@ -211,16 +233,17 @@ export default function Home() {
     load();
   }
 
-  async function changeModem(id: string, modem_code: string) {
-    const res = await fetch(`/api/requests/${id}`, {
-      method: "PATCH",
+  async function assignModem(requestId: string, code: string) {
+    const res = await fetch(`/api/requests/${requestId}/modem`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ modem_code }),
+      body: JSON.stringify({ code }),
     });
     if (!res.ok) {
       const json = await res.json();
       alert(json.error ?? "حدث خطأ");
     }
+    setPickFor(null);
     load();
   }
 
@@ -236,7 +259,6 @@ export default function Home() {
       phone2: r.phone2 ?? "",
       code1: r.code1 ?? "",
       code2: r.code2 ?? "",
-      modem_code: r.modem_code ?? "",
       region: r.region ?? "",
       notes: r.notes ?? "",
     });
@@ -289,7 +311,6 @@ export default function Home() {
     load();
   }
 
-  const codes = me?.modemCodes ?? [];
 
   return (
     <main
@@ -317,7 +338,29 @@ export default function Home() {
               {me.role === "admin" ? "الأدمن" : me.username}
             </span>
           )}
-          {me?.role === "admin" && <a href="/modem-codes">أكواد المودم</a>}
+          <span
+            style={{
+              background: "#eff6ff",
+              border: "1px solid #bfdbfe",
+              borderRadius: 6,
+              padding: "4px 10px",
+              fontSize: 14,
+            }}
+          >
+            {me?.role === "admin" && stock.total !== undefined
+              ? `المودمات: الإجمالي ${stock.total} — المتبقي ${stock.remaining}`
+              : `المودمات المتبقية: ${stock.remaining}`}
+          </span>
+          {me?.role === "admin" && (
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              style={{ padding: "4px 12px", cursor: "pointer" }}
+            >
+              + إضافة قائمة مودمات
+            </button>
+          )}
+          <a href="/modem-codes">قائمة المودمات</a>
           {me?.role === "admin" && <a href="/users">إدارة المستخدمين</a>}
           <form method="POST" action="/api/logout">
             <button type="submit" style={{ padding: "4px 12px" }}>
@@ -347,19 +390,24 @@ export default function Home() {
           <input name="national_id" placeholder="الرقم الوطني (اختياري)" style={input} />
           <input name="code1" placeholder="الكود الأول على داية موريتل (اختياري)" style={input} />
           <input name="code2" placeholder="الكود الثاني (اختياري)" style={input} />
-          <select
-            name="modem_code"
-            required={me.restricted}
-            defaultValue=""
-            style={input}
-          >
-            <option value="">كود المودم</option>
-            {codes.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={() => setPickFor("new")}
+              style={{ ...input, flex: 1, textAlign: "right", cursor: "pointer" }}
+            >
+              {newModem ? `المودم: ${newModem}` : "اختيار كود المودم (اختياري)"}
+            </button>
+            {newModem && (
+              <button
+                type="button"
+                onClick={() => setNewModem("")}
+                style={{ padding: 10, cursor: "pointer" }}
+              >
+                إزالة
+              </button>
+            )}
+          </div>
           <input name="region" placeholder="المنطقة" style={input} />
           <textarea
             name="notes"
@@ -490,24 +538,21 @@ export default function Home() {
                     </div>
                   </td>
                   <td style={td}>
-                    {me?.can_edit ? (
-                      <select
-                        value={r.modem_code ?? ""}
-                        onChange={(e) => changeModem(r.id, e.target.value)}
-                        style={{ padding: 4, minWidth: 110 }}
+                    <div>{r.modem_code ?? "—"}</div>
+                    {me?.can_edit && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPickFor({
+                            id: r.id,
+                            number: r.request_number,
+                            current: r.modem_code,
+                          })
+                        }
+                        style={{ marginTop: 4, padding: "2px 8px", fontSize: 12 }}
                       >
-                        <option value="">—</option>
-                        {r.modem_code && !codes.includes(r.modem_code) && (
-                          <option value={r.modem_code}>{r.modem_code}</option>
-                        )}
-                        {codes.map((m) => (
-                          <option key={m} value={m}>
-                            {m}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      (r.modem_code ?? "—")
+                        {r.modem_code ? "تغيير" : "اختيار"}
+                      </button>
                     )}
                   </td>
                   <td style={td}>{r.region ?? "—"}</td>
@@ -556,6 +601,43 @@ export default function Home() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {importOpen && (
+        <ModemImportModal
+          onClose={() => setImportOpen(false)}
+          onDone={load}
+        />
+      )}
+
+      {pickFor && (
+        <ModemPicker
+          showOwner={me?.role === "admin"}
+          modems={modems}
+          current={pickFor === "new" ? newModem || null : pickFor.current}
+          title={
+            pickFor === "new"
+              ? "اختيار مودم للطلب الجديد"
+              : `اختيار مودم للطلب #${pickFor.number}`
+          }
+          onPick={(code) => {
+            if (pickFor === "new") {
+              setNewModem(code);
+              setPickFor(null);
+            } else {
+              assignModem(pickFor.id, code);
+            }
+          }}
+          onClear={() => {
+            if (pickFor === "new") {
+              setNewModem("");
+              setPickFor(null);
+            } else {
+              assignModem(pickFor.id, "");
+            }
+          }}
+          onClose={() => setPickFor(null)}
+        />
       )}
 
       {preview && (
@@ -789,20 +871,6 @@ export default function Home() {
               placeholder="الكود الثاني"
               style={input}
             />
-            <select
-              value={editForm.modem_code}
-              onChange={(e) =>
-                setEditForm({ ...editForm, modem_code: e.target.value })
-              }
-              style={input}
-            >
-              <option value="">بدون كود مودم</option>
-              {codes.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
             <input
               value={editForm.region}
               onChange={(e) =>

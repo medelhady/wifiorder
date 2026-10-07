@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSupabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/current-user";
+import { ownerFilter } from "@/lib/modems";
 
 const BUCKET = "wifi-attachments";
 
@@ -23,10 +24,6 @@ export async function GET() {
     .from("wifi_requests")
     .select("*")
     .order("created_at", { ascending: false });
-
-  if (user.restricted) {
-    query = query.in("modem_code", user.modemCodes);
-  }
 
   const { data, error } = await query;
 
@@ -88,13 +85,23 @@ export async function POST(request: Request) {
     );
   }
 
-  // The modem code is optional, except for someone limited to certain codes.
+  // A modem may be chosen right away; it has to be one that is still unused.
   if (modem_code) {
-    if (!user.modemCodes.includes(modem_code)) {
-      return NextResponse.json({ error: "كود مودم غير صحيح" }, { status: 400 });
+    let freeQuery = supabase
+      .from("modem_codes")
+      .select("code")
+      .eq("code", modem_code)
+      .is("used_by_request", null);
+    if (user.role !== "admin") {
+      freeQuery = freeQuery.or(ownerFilter(user.username));
     }
-  } else if (user.restricted) {
-    return NextResponse.json({ error: "اختر كود المودم" }, { status: 400 });
+    const { data: free } = await freeQuery.maybeSingle();
+    if (!free) {
+      return NextResponse.json(
+        { error: "هذا المودم مستعمل أو غير موجود. اختر مودمًا آخر." },
+        { status: 409 }
+      );
+    }
   }
 
   for (const r of REQUIRED_FILES) {
@@ -125,7 +132,7 @@ export async function POST(request: Request) {
     attachments.push({ type: r.field, name: f.name, path });
   }
 
-  const { error } = await supabase.from("wifi_requests").insert({
+  const { data: inserted, error } = await supabase.from("wifi_requests").insert({
     id,
     customer_name,
     beneficiary_number,
@@ -138,16 +145,40 @@ export async function POST(request: Request) {
     region: region || null,
     notes: notes || null,
     attachments,
-  });
+  }).select("request_number").single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  let modemNote = "";
+  if (modem_code) {
+    let claimQuery = supabase
+      .from("modem_codes")
+      .update({
+        used_by_request: id,
+        used_request_number: inserted?.request_number ?? null,
+        used_by_user: user.username,
+        used_at: new Date().toISOString(),
+      })
+      .eq("code", modem_code)
+      .is("used_by_request", null);
+    if (user.role !== "admin") {
+      claimQuery = claimQuery.or(ownerFilter(user.username));
+    }
+    const { data: claimed } = await claimQuery.select("code");
+
+    if (!claimed || claimed.length === 0) {
+      // Someone took it in the meantime: the request is kept, without a modem.
+      await supabase.from("wifi_requests").update({ modem_code: null }).eq("id", id);
+      modemNote = " (المودم استُعمل قبل الحفظ، اختر مودمًا للطلب)";
+    }
   }
 
   await supabase.from("wifi_request_history").insert({
     request_id: id,
     status: "new",
-    note: `تم إنشاء الطلب بواسطة ${user.username}`,
+    note: `تم إنشاء الطلب بواسطة ${user.username}${modemNote}`,
   });
 
-  return NextResponse.json({ ok: true, id });
+  return NextResponse.json({ ok: true, id, warning: modemNote || undefined });
 }
