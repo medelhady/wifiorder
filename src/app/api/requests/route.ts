@@ -25,6 +25,11 @@ export async function GET() {
     .select("*")
     .order("created_at", { ascending: false });
 
+  // A user sees only the requests assigned to them; the admin sees everything.
+  if (user.role !== "admin") {
+    query = query.eq("assigned_to", user.username);
+  }
+
   const { data, error } = await query;
 
   if (error) {
@@ -57,9 +62,9 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "غير مسجّل" }, { status: 401 });
   }
-  if (!user.can_add) {
+  if (user.role !== "admin") {
     return NextResponse.json(
-      { error: "ليس لديك صلاحية إضافة طلبات" },
+      { error: "إضافة الطلبات للأدمن فقط" },
       { status: 403 }
     );
   }
@@ -75,6 +80,7 @@ export async function POST(request: Request) {
   const code1 = String(form.get("code1") ?? "").trim();
   const code2 = String(form.get("code2") ?? "").trim();
   const modem_code = String(form.get("modem_code") ?? "").trim();
+  const assigned_to = String(form.get("assigned_to") ?? "").trim().toLowerCase();
   const region = String(form.get("region") ?? "").trim();
   const notes = String(form.get("notes") ?? "").trim();
 
@@ -83,6 +89,18 @@ export async function POST(request: Request) {
       { error: "اسم العميل ورقم المستفيد مطلوبان" },
       { status: 400 }
     );
+  }
+
+  if (assigned_to) {
+    const { data: person } = await supabase
+      .from("app_users")
+      .select("username")
+      .eq("username", assigned_to)
+      .eq("active", true)
+      .maybeSingle();
+    if (!person) {
+      return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 400 });
+    }
   }
 
   // A modem may be chosen right away; it has to be one that is still unused.
@@ -142,6 +160,7 @@ export async function POST(request: Request) {
     code1: code1 || null,
     code2: code2 || null,
     modem_code: modem_code || null,
+    assigned_to: assigned_to || null,
     region: region || null,
     notes: notes || null,
     attachments,

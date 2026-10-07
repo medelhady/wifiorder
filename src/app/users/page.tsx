@@ -92,14 +92,6 @@ function Fields({
           <label style={{ display: "flex", gap: 4 }}>
             <input
               type="checkbox"
-              checked={form.can_add}
-              onChange={(e) => setForm({ ...form, can_add: e.target.checked })}
-            />
-            إضافة طلبات
-          </label>
-          <label style={{ display: "flex", gap: 4 }}>
-            <input
-              type="checkbox"
               checked={form.can_edit}
               onChange={(e) => setForm({ ...form, can_edit: e.target.checked })}
             />
@@ -285,7 +277,6 @@ export default function UsersPage() {
                   <td style={{ ...td, fontWeight: 700 }}>{u.username}</td>
                   <td style={td}>
                     {[
-                      u.can_add && "إضافة",
                       u.can_edit && "تعديل",
                       u.can_change_status && "تغيير الحالة",
                       u.can_add_note && "إضافة ملاحظة",

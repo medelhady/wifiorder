@@ -26,12 +26,19 @@ export async function POST(
 
   const { data: existing } = await supabase
     .from("wifi_requests")
-    .select("modem_code, request_number, status")
+    .select("modem_code, request_number, status, assigned_to")
     .eq("id", id)
     .maybeSingle();
 
   if (!existing) {
     return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 });
+  }
+
+  if (user.role !== "admin" && existing.assigned_to !== user.username) {
+    return NextResponse.json(
+      { error: "هذا الطلب غير مسند إليك" },
+      { status: 403 }
+    );
   }
 
   const previous: string | null = existing.modem_code ?? null;

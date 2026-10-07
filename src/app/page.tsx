@@ -20,6 +20,7 @@ type WifiRequest = {
   notes: string | null;
   status: string;
   source: string | null;
+  assigned_to: string | null;
   attachments: Attachment[];
   created_at: string;
 };
@@ -156,6 +157,14 @@ export default function Home() {
   }>({ remaining: 0 });
   const [importOpen, setImportOpen] = useState(false);
   const [newModem, setNewModem] = useState("");
+
+  // Admin only: who the requests can be handed to, which rows are ticked, and the assign popup.
+  const [people, setPeople] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [assigneeFilter, setAssigneeFilter] = useState("");
+  const [assignIds, setAssignIds] = useState<string[] | null>(null);
+  const [assignTo, setAssignTo] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
   // Which request the modem picker is open for ("new" = the add form).
   const [pickFor, setPickFor] = useState<
     "new" | { id: string; number: number; current: string | null } | null
@@ -176,6 +185,17 @@ export default function Home() {
     const modemJson = await modemRes.json();
     setMe(meJson.user ?? null);
     setRequests(reqJson.requests ?? []);
+    if (meJson.user?.role === "admin") {
+      const peopleRes = await fetch("/api/users");
+      if (peopleRes.ok) {
+        const peopleJson = await peopleRes.json();
+        setPeople(
+          (peopleJson.users ?? [])
+            .filter((u: { active: boolean }) => u.active)
+            .map((u: { username: string }) => u.username)
+        );
+      }
+    }
     setModems(modemJson.modems ?? []);
     setStock({
       remaining: modemJson.remaining ?? 0,
@@ -247,6 +267,38 @@ export default function Home() {
     load();
   }
 
+  async function runBulk(action: "assign" | "delete", ids: string[], username?: string) {
+    setBulkBusy(true);
+    const res = await fetch("/api/requests/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ids, username }),
+    });
+    const json = await res.json();
+    setBulkBusy(false);
+    if (!res.ok) {
+      alert(json.error ?? "حدث خطأ");
+      return;
+    }
+    setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+    setAssignIds(null);
+    load();
+  }
+
+  function askDelete(ids: string[]) {
+    const text =
+      ids.length === 1
+        ? "حذف هذا الطلب نهائيًا مع مرفقاته؟ المودم المرتبط به يرجع للرصيد."
+        : `حذف ${ids.length} طلب نهائيًا مع مرفقاتها؟ المودمات المرتبطة بها ترجع للرصيد.`;
+    if (confirm(text)) runBulk("delete", ids);
+  }
+
+  function toggleOne(id: string) {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
   function startEdit(r: WifiRequest) {
     setEditingId(r.id);
     setEditNumber(r.request_number);
@@ -312,6 +364,15 @@ export default function Home() {
   }
 
 
+  const visibleRequests =
+    me?.role === "admin" && assigneeFilter
+      ? requests.filter((r) =>
+          assigneeFilter === "__none__"
+            ? !r.assigned_to
+            : r.assigned_to === assigneeFilter
+        )
+      : requests;
+
   return (
     <main
       dir="rtl"
@@ -370,7 +431,7 @@ export default function Home() {
         </div>
       </div>
 
-      {me?.can_add && (
+      {me?.role === "admin" && (
         <form onSubmit={onSubmit} style={{ ...box, display: "grid", gap: 12 }}>
           <h2 style={{ margin: 0 }}>إضافة طلب جديد</h2>
           <input
@@ -409,6 +470,14 @@ export default function Home() {
             )}
           </div>
           <input name="region" placeholder="المنطقة" style={input} />
+          <select name="assigned_to" defaultValue="" style={input}>
+            <option value="">إسناد الطلب إلى... (اختياري)</option>
+            {people.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
           <textarea
             name="notes"
             placeholder="ملاحظات (اختياري)"
@@ -439,6 +508,64 @@ export default function Home() {
       {loading && <p>جارٍ التحميل...</p>}
       {!loading && requests.length === 0 && <p>لا توجد طلبات بعد.</p>}
 
+      {me?.role === "admin" && requests.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <select
+            value={assigneeFilter}
+            onChange={(e) => setAssigneeFilter(e.target.value)}
+            style={{ padding: 6 }}
+          >
+            <option value="">عرض: كل الطلبات</option>
+            <option value="__none__">غير المسندة</option>
+            {people.map((name) => (
+              <option key={name} value={name}>
+                المسندة إلى {name}
+              </option>
+            ))}
+          </select>
+
+          {selected.length > 0 && (
+            <>
+              <strong>المحدد: {selected.length}</strong>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => {
+                  setAssignTo("");
+                  setAssignIds(selected);
+                }}
+                style={{ padding: "6px 12px", cursor: "pointer" }}
+              >
+                إسناد المحدد
+              </button>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => askDelete(selected)}
+                style={{ padding: "6px 12px", cursor: "pointer", color: "crimson" }}
+              >
+                حذف المحدد
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelected([])}
+                style={{ padding: "6px 12px", cursor: "pointer" }}
+              >
+                إلغاء التحديد
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {requests.length > 0 && (
         <div
           style={{
@@ -450,7 +577,23 @@ export default function Home() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={th}>الرقم</th>
+                <th style={th}>
+                  {me?.role === "admin" && (
+                    <input
+                      type="checkbox"
+                      aria-label="تحديد الكل"
+                      checked={
+                        visibleRequests.length > 0 &&
+                        visibleRequests.every((r) => selected.includes(r.id))
+                      }
+                      onChange={(e) =>
+                        setSelected(e.target.checked ? visibleRequests.map((r) => r.id) : [])
+                      }
+                      style={{ marginInlineEnd: 6 }}
+                    />
+                  )}
+                  الرقم
+                </th>
                 <th style={th}>الاسم</th>
                 <th style={th}>رقم المستفيد</th>
                 <th style={th}>الرقم الوطني</th>
@@ -460,15 +603,51 @@ export default function Home() {
                 <th style={th}>كود المودم</th>
                 <th style={th}>المنطقة</th>
                 <th style={th}>الملاحظات</th>
+                {me?.role === "admin" && <th style={th}>مسند إلى</th>}
                 <th style={th}>الحالة</th>
                 {me?.can_edit && <th style={th}>إجراء</th>}
               </tr>
             </thead>
             <tbody>
-              {requests.map((r) => (
+              {visibleRequests.map((r) => (
                 <tr key={r.id}>
                   <td style={{ ...td, fontWeight: 700 }}>
-                    #{r.request_number}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {me?.role === "admin" && (
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(r.id)}
+                          onChange={() => toggleOne(r.id)}
+                        />
+                      )}
+                      <span>#{r.request_number}</span>
+                    </div>
+                    {me?.role === "admin" && (
+                      <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAssignTo(r.assigned_to ?? "");
+                            setAssignIds([r.id]);
+                          }}
+                          style={{ padding: "1px 8px", fontSize: 12, cursor: "pointer" }}
+                        >
+                          إسناد
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => askDelete([r.id])}
+                          style={{
+                            padding: "1px 8px",
+                            fontSize: 12,
+                            cursor: "pointer",
+                            color: "crimson",
+                          }}
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    )}
                     {r.source === "whatsapp" && (
                       <div
                         style={{
@@ -570,6 +749,13 @@ export default function Home() {
                       </button>
                     )}
                   </td>
+                  {me?.role === "admin" && (
+                    <td style={td}>
+                      {r.assigned_to ?? (
+                        <span style={{ color: "#b45309" }}>غير مسند</span>
+                      )}
+                    </td>
+                  )}
                   <td style={{ ...td, minWidth: 150 }}>
                     <select
                       value={r.status}
@@ -600,6 +786,71 @@ export default function Home() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {assignIds && (
+        <div
+          onClick={() => setAssignIds(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            zIndex: 30,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 20,
+              width: "100%",
+              maxWidth: 380,
+              display: "grid",
+              gap: 12,
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: 18 }}>
+              إسناد {assignIds.length === 1 ? "الطلب" : `${assignIds.length} طلب`} إلى مستخدم
+            </h2>
+            <select
+              value={assignTo}
+              onChange={(e) => setAssignTo(e.target.value)}
+              style={input}
+            >
+              <option value="">بدون إسناد (يراه الأدمن فقط)</option>
+              {people.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <p style={{ margin: 0, color: "#666", fontSize: 13 }}>
+              المستخدم لا يرى إلا الطلبات المسندة إليه.
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => runBulk("assign", assignIds, assignTo)}
+                style={{ ...input, flex: 1 }}
+              >
+                {bulkBusy ? "جارٍ الإسناد..." : "إسناد"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAssignIds(null)}
+                style={{ ...input, flex: 1 }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
