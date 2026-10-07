@@ -11,7 +11,34 @@ export type Modem = {
   owner?: string | null;
 };
 
-// نافذة اختيار مودم من المودمات غير المستعملة، مع بحث
+const head: React.CSSProperties = {
+  position: "sticky",
+  top: 0,
+  background: "#f3f4f6",
+  padding: "8px 10px",
+  textAlign: "right",
+  fontSize: 13,
+  borderBottom: "1px solid #ddd",
+  whiteSpace: "nowrap",
+};
+
+const cell: React.CSSProperties = {
+  padding: "8px 10px",
+  borderBottom: "1px solid #eee",
+  fontSize: 13,
+  whiteSpace: "nowrap",
+};
+
+// Codes are Latin letters and digits inside an Arabic page: each one sits in its own cell, written
+// left to right, so the number in front of it can never run into it.
+const code: React.CSSProperties = {
+  direction: "ltr",
+  unicodeBidi: "isolate",
+  display: "inline-block",
+  fontFamily: "ui-monospace, Consolas, monospace",
+};
+
+// نافذة اختيار مودم من المودمات غير المستعملة: جدول مرتب مع بحث
 export default function ModemPicker({
   modems,
   current,
@@ -65,7 +92,7 @@ export default function ModemPicker({
           borderRadius: 10,
           padding: 20,
           width: "100%",
-          maxWidth: 500,
+          maxWidth: 680,
           maxHeight: "88vh",
           display: "flex",
           flexDirection: "column",
@@ -102,7 +129,9 @@ export default function ModemPicker({
               fontSize: 14,
             }}
           >
-            <span>المودم الحالي: {current}</span>
+            <span>
+              المودم الحالي: <span style={code}>{current}</span>
+            </span>
             {onClear && (
               <button
                 type="button"
@@ -128,56 +157,63 @@ export default function ModemPicker({
           {needle ? ` — نتائج البحث: ${matches.length}` : ""}
         </div>
 
-        <div style={{ overflowY: "auto", display: "grid", gap: 6 }}>
-          {shown.length === 0 && (
-            <p style={{ margin: 0, color: "#666" }}>
-              {modems.length === 0
-                ? "لا توجد مودمات متبقية."
-                : "لا توجد نتائج."}
-            </p>
-          )}
-          {shown.map((m) => (
-            <button
-              key={m.code}
-              type="button"
-              onClick={() => onPick(m.code)}
-              style={{
-                textAlign: "right",
-                padding: "8px 12px",
-                border: "1px solid #ddd",
-                borderRadius: 6,
-                background: "#fff",
-                cursor: "pointer",
-                fontSize: 14,
-                lineHeight: 1.5,
-              }}
-            >
-              <div>
-                <span style={{ color: "#666", marginInlineEnd: 8 }}>
-                  #{m.seq}
-                </span>
-                <strong>{m.code}</strong>
-                {showOwner && (
-                  <span style={{ color: "#2563eb", fontSize: 12, marginInlineStart: 8 }}>
-                    {m.owner ? `تبع: ${m.owner}` : "مشترك"}
-                  </span>
-                )}
-              </div>
-              {(m.prod_id || m.mac) && (
-                <div style={{ color: "#666", fontSize: 12 }} dir="ltr">
-                  {m.prod_id ? `PROD ID: ${m.prod_id}` : ""}
-                  {m.prod_id && m.mac ? "  ·  " : ""}
-                  {m.mac ? `MAC: ${m.mac}` : ""}
-                </div>
-              )}
-            </button>
-          ))}
-          {matches.length > shown.length && (
-            <p style={{ margin: 0, color: "#666", fontSize: 13 }}>
-              يظهر أول 200 فقط. استخدم البحث لتضييق القائمة.
-            </p>
-          )}
-        </div>
+        {shown.length === 0 ? (
+          <p style={{ margin: 0, color: "#666" }}>
+            {modems.length === 0 ? "لا توجد مودمات متبقية." : "لا توجد نتائج."}
+          </p>
+        ) : (
+          <div
+            style={{
+              overflow: "auto",
+              border: "1px solid #ddd",
+              borderRadius: 8,
+            }}
+          >
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={head}>#</th>
+                  <th style={head}>SN (الكود)</th>
+                  <th style={head}>PROD ID</th>
+                  <th style={head}>MAC</th>
+                  {showOwner && <th style={head}>تبع</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((m) => (
+                  <tr
+                    key={m.code}
+                    onClick={() => onPick(m.code)}
+                    style={{ cursor: "pointer" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+                  >
+                    <td style={{ ...cell, color: "#666" }}>{m.seq}</td>
+                    <td style={{ ...cell, fontWeight: 700 }}>
+                      <span style={code}>{m.code}</span>
+                    </td>
+                    <td style={cell}>
+                      <span style={code}>{m.prod_id || "—"}</span>
+                    </td>
+                    <td style={cell}>
+                      <span style={code}>{m.mac || "—"}</span>
+                    </td>
+                    {showOwner && (
+                      <td style={{ ...cell, color: "#2563eb" }}>
+                        {m.owner ?? "مشترك"}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {matches.length > shown.length && (
+          <p style={{ margin: 0, color: "#666", fontSize: 13 }}>
+            يظهر أول 200 فقط. استخدم البحث لتضييق القائمة.
+          </p>
+        )}
       </div>
     </div>
   );
