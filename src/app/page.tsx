@@ -167,6 +167,8 @@ export default function Home() {
   const [assignTo, setAssignTo] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
   const [toast, setToast] = useState("");
+  // The add-request form is folded away until it is needed.
+  const [addOpen, setAddOpen] = useState(false);
   // Which request the modem picker is open for ("new" = the add form).
   const [pickFor, setPickFor] = useState<
     "new" | { id: string; number: number; current: string | null } | null
@@ -238,7 +240,10 @@ export default function Home() {
     }
     form.reset();
     setNewModem("");
-    setMessage(json.warning ? `تم حفظ الطلب${json.warning}` : "تم حفظ الطلب");
+    const done = json.warning ? `تم حفظ الطلب${json.warning}` : "تم حفظ الطلب";
+    setMessage(done);
+    setAddOpen(false);
+    showToast(done);
     load();
   }
 
@@ -508,8 +513,32 @@ export default function Home() {
       </div>
 
       {me?.role === "admin" && (
-        <form onSubmit={onSubmit} style={{ ...box, display: "grid", gap: 12 }}>
-          <h2 style={{ margin: 0 }}>إضافة طلب جديد</h2>
+        <button
+          type="button"
+          onClick={() => setAddOpen((open) => !open)}
+          aria-expanded={addOpen}
+          style={{
+            width: "100%",
+            textAlign: "right",
+            padding: "12px 16px",
+            marginBottom: addOpen ? 8 : 16,
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: "pointer",
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            background: addOpen ? "#eff6ff" : "#f9fafb",
+          }}
+        >
+          {addOpen ? "▾ إضافة طلب جديد" : "▸ إضافة طلب جديد"}
+        </button>
+      )}
+
+      {me?.role === "admin" && (
+        <form
+          onSubmit={onSubmit}
+          style={{ ...box, display: addOpen ? "grid" : "none", gap: 12 }}
+        >
           <input
             name="customer_name"
             placeholder="اسم العميل"
