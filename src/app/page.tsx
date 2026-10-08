@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ModemPicker, { type Modem } from "@/components/ModemPicker";
 import ModemImportModal from "@/components/ModemImportModal";
+import ImageZoom from "@/components/ImageZoom";
 
 type Attachment = { type: string; name: string; url: string | null };
 type WifiRequest = {
@@ -48,13 +49,13 @@ type EditForm = {
 
 const STATUS_LABELS: Record<string, string> = {
   new: "جديد",
-  review: "قيد المراجعة",
-  in_progress: "قيد التنفيذ",
+  account_created: "تم إنشاء الحساب",
+  paid: "تم الدفع",
   done: "مكتمل",
   rejected: "مرفوض",
 };
 
-const STEPS = ["new", "review", "in_progress", "done"];
+const STEPS = ["new", "account_created", "paid", "done"];
 
 const FILE_FIELDS = [
   { field: "id_card", label: "إرفاق بطاقة التعريف" },
@@ -165,6 +166,7 @@ export default function Home() {
   const [assignIds, setAssignIds] = useState<string[] | null>(null);
   const [assignTo, setAssignTo] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [toast, setToast] = useState("");
   // Which request the modem picker is open for ("new" = the add form).
   const [pickFor, setPickFor] = useState<
     "new" | { id: string; number: number; current: string | null } | null
@@ -265,6 +267,80 @@ export default function Home() {
     }
     setPickFor(null);
     load();
+  }
+
+  function showToast(text: string) {
+    setToast(text);
+    setTimeout(() => setToast(""), 4500);
+  }
+
+  // The same summary the bot sends on WhatsApp, with the request number and status added.
+  function buildSummary(r: WifiRequest) {
+    const line = (label: string, value: string | null | undefined) =>
+      `• ${label}: ${value && String(value).trim() ? value : "—"}`;
+
+    const lines = [
+      `📶 *طلب ويفي #${r.request_number}*`,
+      "",
+      line("المنطقة", r.region),
+      line("الاسم", r.customer_name),
+      line("الرقم الوطني", r.national_id),
+      line("الهاتف الأول", r.phone),
+      line("الهاتف الثاني", r.phone2),
+      line("الكود العلوي", r.code1),
+      line("الكود السفلي", r.code2),
+    ];
+    if (r.modem_code) lines.push(line("كود المودم", r.modem_code));
+    lines.push(line("الحالة", STATUS_LABELS[r.status] ?? r.status));
+    if (r.notes) lines.push("", `ملاحظات:\n${r.notes}`);
+
+    return lines.join("\n");
+  }
+
+  async function copySummary(r: WifiRequest) {
+    try {
+      await navigator.clipboard.writeText(buildSummary(r));
+      showToast("تم نسخ الملخص ✓");
+    } catch {
+      showToast("تعذّر النسخ. اسمح للموقع بالوصول للحافظة.");
+    }
+  }
+
+  // On a phone the summary and the pictures go to WhatsApp together. A computer cannot attach files
+  // to a WhatsApp link, so there only the summary opens in WhatsApp.
+  async function shareToWhatsApp(r: WifiRequest) {
+    const text = buildSummary(r);
+    const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
+
+    try {
+      showToast("جارٍ تجهيز المرفقات...");
+      const files: File[] = [];
+      const names: Record<string, string> = { id_card: "id-card", mauritel_copy: "mauritel" };
+
+      for (const [index, a] of r.attachments.entries()) {
+        if (!a.url) continue;
+        const res = await fetch(a.url);
+        const blob = await res.blob();
+        const ext = blob.type.includes("pdf") ? "pdf" : blob.type.split("/")[1] || "jpg";
+        files.push(
+          new File([blob], `${names[a.type] ?? `file-${index + 1}`}.${ext}`, { type: blob.type })
+        );
+      }
+
+      if (files.length > 0 && nav.canShare?.({ files })) {
+        await navigator.share({ text, files });
+        setToast("");
+        return;
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        setToast("");
+        return;
+      }
+    }
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    showToast("فتحت واتساب بالملخص. من الكمبيوتر المرفقات تُرسل من الطلب نفسه، ومن الجوال تُرسل مع الملخص.");
   }
 
   async function runBulk(action: "assign" | "delete", ids: string[], username?: string) {
@@ -449,8 +525,8 @@ export default function Home() {
           <input name="phone" placeholder="رقم الجوال (اختياري)" style={input} />
           <input name="phone2" placeholder="رقم الجوال الثاني (اختياري)" style={input} />
           <input name="national_id" placeholder="الرقم الوطني (اختياري)" style={input} />
-          <input name="code1" placeholder="الكود الأول على داية موريتل (اختياري)" style={input} />
-          <input name="code2" placeholder="الكود الثاني (اختياري)" style={input} />
+          <input name="code1" placeholder="الكود العلوي على داية موريتل (اختياري)" style={input} />
+          <input name="code2" placeholder="الكود السفلي (اختياري)" style={input} />
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button
               type="button"
@@ -605,6 +681,7 @@ export default function Home() {
                 <th style={th}>الملاحظات</th>
                 {me?.role === "admin" && <th style={th}>مسند إلى</th>}
                 <th style={th}>الحالة</th>
+                <th style={th}>مشاركة</th>
                 {me?.can_edit && <th style={th}>إجراء</th>}
               </tr>
             </thead>
@@ -770,6 +847,32 @@ export default function Home() {
                       ))}
                     </select>
                     <MiniProgress status={r.status} />
+                  </td>
+                  <td style={td}>
+                    <div style={{ display: "grid", gap: 4 }}>
+                      <button
+                        type="button"
+                        onClick={() => copySummary(r)}
+                        style={{ padding: "2px 8px", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        نسخ الملخص
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => shareToWhatsApp(r)}
+                        style={{
+                          padding: "2px 8px",
+                          fontSize: 12,
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                          background: "#dcfce7",
+                          border: "1px solid #86efac",
+                          borderRadius: 4,
+                        }}
+                      >
+                        إرسال واتساب
+                      </button>
+                    </div>
                   </td>
                   {me?.can_edit && (
                     <td style={td}>
@@ -960,16 +1063,7 @@ export default function Home() {
                   style={{ width: "100%", height: "78vh", border: 0 }}
                 />
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={preview.url}
-                  alt={preview.label}
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "78vh",
-                    objectFit: "contain",
-                  }}
-                />
+                <ImageZoom src={preview.url} alt={preview.label} />
               )}
             </div>
           </div>
@@ -1111,7 +1205,7 @@ export default function Home() {
               onChange={(e) =>
                 setEditForm({ ...editForm, code1: e.target.value })
               }
-              placeholder="الكود الأول"
+              placeholder="الكود العلوي"
               style={input}
             />
             <input
@@ -1119,7 +1213,7 @@ export default function Home() {
               onChange={(e) =>
                 setEditForm({ ...editForm, code2: e.target.value })
               }
-              placeholder="الكود الثاني"
+              placeholder="الكود السفلي"
               style={input}
             />
             <input
@@ -1159,6 +1253,25 @@ export default function Home() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#111",
+            color: "#fff",
+            padding: "10px 16px",
+            borderRadius: 8,
+            zIndex: 50,
+            maxWidth: "90vw",
+            fontSize: 14,
+          }}
+        >
+          {toast}
         </div>
       )}
     </main>

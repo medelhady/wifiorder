@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/current-user";
 
-const STATUSES = ["new", "review", "in_progress", "done", "rejected"];
+const STATUSES = ["new", "account_created", "paid", "done", "rejected"];
 
 export async function PATCH(
   request: Request,
