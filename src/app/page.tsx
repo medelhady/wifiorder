@@ -91,6 +91,19 @@ const td: React.CSSProperties = {
 };
 
 
+// A beneficiary number that looks like a phone number opens a WhatsApp chat: eight digits are a
+// Mauritanian number (222 is added), nine to fifteen digits are taken as already international.
+function whatsappLink(value: string | null | undefined): string | null {
+  let digits = (value ?? "")
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/\D/g, "");
+
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 8) digits = "222" + digits;
+
+  return digits.length >= 9 && digits.length <= 15 ? `https://wa.me/${digits}` : null;
+}
+
 const css = `
 .wf { --bd:#e5e7eb; --muted:#6b7280; --blue:#2563eb; max-width:1280px; margin:0 auto; padding:16px; font-family:system-ui,"Segoe UI",Tahoma,sans-serif; color:#111827; }
 .wf *, .wf *::before, .wf *::after { box-sizing:border-box; }
@@ -136,6 +149,8 @@ const css = `
 .wf .val.strong { font-weight:700; font-size:16px; }
 .wf .sub { font-size:13px; color:var(--muted); margin-top:2px; }
 .wf .num { display:flex; align-items:center; gap:8px; font-size:20px; font-weight:800; }
+.wf .wa-link { color:#15803d; font-weight:600; text-decoration:none; border-bottom:1px dashed #15803d; border-radius:3px; padding:0 2px; }
+.wf .wa-link:hover { background:#dcfce7; }
 .wf .badge { display:inline-block; margin-top:6px; font-size:11px; color:#15803d; background:#dcfce7; border-radius:999px; padding:1px 8px; }
 .wf .card-foot { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:8px 16px; background:#f9fafb; border-top:1px solid var(--bd); }
 .wf .foot-actions { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
@@ -765,7 +780,20 @@ export default function Home() {
               </div>
               {r.beneficiary_number && (
                 <div className="sub">
-                  رقم المستفيد: <span className="ltr">{r.beneficiary_number}</span>
+                  رقم المستفيد:{" "}
+                  {whatsappLink(r.beneficiary_number) ? (
+                    <a
+                      className="ltr wa-link"
+                      href={whatsappLink(r.beneficiary_number) as string}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="فتح محادثة واتساب مع المستفيد"
+                    >
+                      💬 {r.beneficiary_number}
+                    </a>
+                  ) : (
+                    <span className="ltr">{r.beneficiary_number}</span>
+                  )}
                 </div>
               )}
             </div>
