@@ -341,27 +341,21 @@ export default function Home() {
     setTimeout(() => setToast(""), 4500);
   }
 
-  // The same summary the bot sends on WhatsApp, with the request number and status added.
+  // The short form that is copied or sent: only the values, one line each, in this order --
+  // name, national ID, phone numbers, the two codes on the Mauritel device. Nothing that is empty.
   function buildSummary(r: WifiRequest) {
-    const line = (label: string, value: string | null | undefined) =>
-      `• ${label}: ${value && String(value).trim() ? value : "—"}`;
+    const clean = (value: string | null | undefined) => (value ?? "").trim();
+    const together = (...values: (string | null | undefined)[]) =>
+      values.map(clean).filter(Boolean).join(" - ");
 
-    const lines = [
-      `📶 *طلب ويفي #${r.request_number}*`,
-      "",
-      line("المنطقة", r.region),
-      line("الاسم", r.customer_name),
-      line("الرقم الوطني", r.national_id),
-      line("الهاتف الأول", r.phone),
-      line("الهاتف الثاني", r.phone2),
-      line("الكود العلوي", r.code1),
-      line("الكود السفلي", r.code2),
-    ];
-    if (r.modem_code) lines.push(line("كود المودم", r.modem_code));
-    lines.push(line("الحالة", STATUS_LABELS[r.status] ?? r.status));
-    if (r.notes) lines.push("", `ملاحظات:\n${r.notes}`);
-
-    return lines.join("\n");
+    return [
+      clean(r.customer_name),
+      clean(r.national_id),
+      together(r.phone, r.phone2),
+      together(r.code1, r.code2),
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   async function copySummary(r: WifiRequest) {
