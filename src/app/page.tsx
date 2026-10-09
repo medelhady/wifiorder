@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import ModemPicker, { type Modem } from "@/components/ModemPicker";
 import ModemImportModal from "@/components/ModemImportModal";
 import ImageZoom from "@/components/ImageZoom";
+import CopyButton from "@/components/CopyButton";
 
 type Attachment = { type: string; name: string; url: string | null };
 type WifiRequest = {
@@ -151,6 +152,9 @@ const css = `
 .wf .num { display:flex; align-items:center; gap:8px; font-size:20px; font-weight:800; }
 .wf .wa-link { color:#15803d; font-weight:600; text-decoration:none; border-bottom:1px dashed #15803d; border-radius:3px; padding:0 2px; }
 .wf .wa-link:hover { background:#dcfce7; }
+.wf .copy-btn { border:0; background:transparent; cursor:pointer; padding:2px 4px; margin-inline-start:4px; color:#9ca3af; border-radius:4px; line-height:1; vertical-align:middle; }
+.wf .copy-btn:hover { color:#2563eb; background:#eff6ff; }
+.wf .copy-btn.done { color:#16a34a; }
 .wf .badge { display:inline-block; margin-top:6px; font-size:11px; color:#15803d; background:#dcfce7; border-radius:999px; padding:1px 8px; }
 .wf .card-foot { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:8px 16px; background:#f9fafb; border-top:1px solid var(--bd); }
 .wf .foot-actions { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
@@ -773,10 +777,14 @@ export default function Home() {
 
             <div>
               <div className="cap">العميل</div>
-              <div className="val strong">{r.customer_name}</div>
+              <div className="val strong">
+                {r.customer_name}
+                <CopyButton value={r.customer_name} label="الاسم" />
+              </div>
               <div className="sub">المنطقة: {r.region ?? "—"}</div>
               <div className="sub">
                 الرقم الوطني: <span className="ltr">{r.national_id ?? "—"}</span>
+                <CopyButton value={r.national_id} label="الرقم الوطني" />
               </div>
               {r.beneficiary_number && (
                 <div className="sub">
@@ -794,6 +802,7 @@ export default function Home() {
                   ) : (
                     <span className="ltr">{r.beneficiary_number}</span>
                   )}
+                  <CopyButton value={r.beneficiary_number} label="رقم المستفيد" />
                 </div>
               )}
             </div>
@@ -802,10 +811,12 @@ export default function Home() {
               <div className="cap">الهاتف</div>
               <div className="val">
                 <span className="ltr">{r.phone ?? "—"}</span>
+                <CopyButton value={r.phone} label="الهاتف" />
               </div>
               {r.phone2 && (
                 <div className="val">
                   <span className="ltr">{r.phone2}</span>
+                  <CopyButton value={r.phone2} label="الهاتف الثاني" />
                 </div>
               )}
             </div>
@@ -814,6 +825,7 @@ export default function Home() {
               <div className="cap">كود المودم</div>
               <div className="val strong">
                 {r.modem_code ? <span className="ltr">{r.modem_code}</span> : "—"}
+                <CopyButton value={r.modem_code} label="كود المودم" />
               </div>
               {me?.can_edit && (
                 <button
@@ -833,9 +845,11 @@ export default function Home() {
               )}
               <div className="sub" style={{ marginTop: 6 }}>
                 الكود العلوي: <span className="ltr">{r.code1 ?? "—"}</span>
+                <CopyButton value={r.code1} label="الكود العلوي" />
               </div>
               <div className="sub">
                 الكود السفلي: <span className="ltr">{r.code2 ?? "—"}</span>
+                <CopyButton value={r.code2} label="الكود السفلي" />
               </div>
             </div>
 
