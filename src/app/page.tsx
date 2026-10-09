@@ -90,6 +90,66 @@ const td: React.CSSProperties = {
   fontSize: 14,
 };
 
+
+const css = `
+.wf { --bd:#e5e7eb; --muted:#6b7280; --blue:#2563eb; max-width:1280px; margin:0 auto; padding:16px; font-family:system-ui,"Segoe UI",Tahoma,sans-serif; color:#111827; }
+.wf *, .wf *::before, .wf *::after { box-sizing:border-box; }
+.wf button, .wf select, .wf input, .wf textarea { font-family:inherit; }
+.wf .ltr { direction:ltr; unicode-bidi:isolate; display:inline-block; }
+.wf .topbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; background:#fff; border:1px solid var(--bd); border-radius:12px; margin-bottom:14px; }
+.wf .brand h1 { margin:0; font-size:22px; line-height:1.2; }
+.wf .brand small { color:var(--muted); }
+.wf .actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.wf .btn { padding:7px 14px; border:1px solid var(--bd); border-radius:8px; background:#fff; cursor:pointer; font-size:14px; text-decoration:none; color:#111827; display:inline-flex; align-items:center; gap:6px; line-height:1.3; }
+.wf .btn:hover { background:#f3f4f6; }
+.wf .btn:disabled { opacity:.55; cursor:default; }
+.wf .btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+.wf .btn.primary:hover { background:#1d4ed8; }
+.wf .btn.danger { color:#b91c1c; border-color:#fecaca; }
+.wf .btn.danger:hover { background:#fef2f2; }
+.wf .btn.whatsapp { background:#dcfce7; border-color:#86efac; color:#166534; }
+.wf .btn.whatsapp:hover { background:#bbf7d0; }
+.wf .btn.sm { padding:3px 10px; font-size:12px; border-radius:6px; }
+.wf .pill { background:#eff6ff; border:1px solid #bfdbfe; border-radius:999px; padding:6px 14px; font-size:14px; white-space:nowrap; }
+.wf .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:10px; margin-bottom:14px; }
+.wf .stat { text-align:right; padding:10px 14px; border:1px solid var(--bd); border-radius:10px; background:#fff; cursor:pointer; }
+.wf .stat b { display:block; font-size:22px; line-height:1.2; }
+.wf .stat span { font-size:13px; color:var(--muted); }
+.wf .stat:hover { background:#f9fafb; }
+.wf .stat.active { border-color:var(--blue); background:#eff6ff; box-shadow:0 0 0 1px var(--blue) inset; }
+.wf .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+.wf .toolbar input[type=search] { flex:1; min-width:220px; padding:9px 12px; border:1px solid var(--bd); border-radius:8px; font-size:15px; }
+.wf .toolbar select { padding:9px 10px; border:1px solid var(--bd); border-radius:8px; background:#fff; font-size:14px; }
+.wf .checkall { display:inline-flex; gap:6px; align-items:center; font-size:14px; color:var(--muted); }
+.wf .selbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:10px 14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; margin-bottom:12px; }
+.wf .panel { background:#fff; border:1px solid var(--bd); border-radius:12px; padding:16px; margin-bottom:14px; }
+.wf .panel h2 { margin:0 0 12px; font-size:17px; }
+.wf .formgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+.wf .formgrid input:not([type=file]), .wf .formgrid select, .wf .formgrid textarea { padding:10px; font-size:15px; border:1px solid var(--bd); border-radius:8px; width:100%; background:#fff; }
+.wf .formgrid .full { grid-column:1 / -1; }
+.wf .formgrid label { display:grid; gap:6px; font-size:14px; }
+.wf .card { background:#fff; border:1px solid var(--bd); border-radius:12px; margin-bottom:10px; overflow:hidden; }
+.wf .card.sel { border-color:var(--blue); box-shadow:0 0 0 2px #bfdbfe; }
+.wf .card-main { display:grid; grid-template-columns:110px 1.4fr 1fr 1.3fr 1.1fr 1.3fr; gap:14px; padding:14px 16px; align-items:start; }
+.wf .cap { font-size:11px; color:var(--muted); margin-bottom:3px; }
+.wf .val { font-size:15px; word-break:break-word; }
+.wf .val.strong { font-weight:700; font-size:16px; }
+.wf .sub { font-size:13px; color:var(--muted); margin-top:2px; }
+.wf .num { display:flex; align-items:center; gap:8px; font-size:20px; font-weight:800; }
+.wf .badge { display:inline-block; margin-top:6px; font-size:11px; color:#15803d; background:#dcfce7; border-radius:999px; padding:1px 8px; }
+.wf .card-foot { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:8px 16px; background:#f9fafb; border-top:1px solid var(--bd); }
+.wf .foot-actions { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.wf .chips { display:flex; flex-wrap:wrap; gap:6px; }
+.wf .chip { padding:4px 12px; font-size:12px; border:1px solid var(--bd); border-radius:999px; background:#fff; cursor:pointer; }
+.wf .chip:hover { background:#eff6ff; border-color:#bfdbfe; }
+.wf .note { white-space:pre-wrap; font-size:14px; padding:10px 16px; border-top:1px dashed var(--bd); background:#fffbeb; }
+.wf .status select { width:100%; padding:7px 8px; border:1px solid var(--bd); border-radius:8px; background:#fff; margin-bottom:8px; font-size:14px; }
+.wf .empty { text-align:center; color:var(--muted); padding:36px 12px; background:#fff; border:1px dashed var(--bd); border-radius:12px; }
+@media (max-width:1050px) { .wf .card-main { grid-template-columns:1fr 1fr 1fr; } }
+@media (max-width:640px) { .wf { padding:10px; } .wf .card-main { grid-template-columns:1fr 1fr; } .wf .topbar { padding:12px; } }
+@media (max-width:340px) { .wf .card-main { grid-template-columns:1fr; } }
+`;
+
 function MiniProgress({ status }: { status: string }) {
   if (status === "rejected") {
     return (
@@ -169,6 +229,8 @@ export default function Home() {
   const [toast, setToast] = useState("");
   // The add-request form is folded away until it is needed.
   const [addOpen, setAddOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   // Which request the modem picker is open for ("new" = the add form).
   const [pickFor, setPickFor] = useState<
     "new" | { id: string; number: number; current: string | null } | null
@@ -454,181 +516,100 @@ export default function Home() {
         )
       : requests;
 
+  const needle = search.trim().toLowerCase();
+  const shownRequests = visibleRequests.filter((r) => {
+    if (statusFilter && r.status !== statusFilter) return false;
+    if (!needle) return true;
+    return [
+      r.customer_name,
+      r.national_id,
+      r.phone,
+      r.phone2,
+      r.beneficiary_number,
+      r.code1,
+      r.code2,
+      r.modem_code,
+      r.region,
+      String(r.request_number),
+      r.assigned_to,
+    ].some((value) => (value ?? "").toLowerCase().includes(needle));
+  });
+  const countOf = (status: string) => visibleRequests.filter((r) => r.status === status).length;
+  const isAdmin = me?.role === "admin";
+
   return (
-    <main
-      dir="rtl"
-      style={{
-        maxWidth: 1200,
-        margin: "0 auto",
-        padding: 16,
-        fontFamily: "system-ui, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 8,
-        }}
-      >
-        <h1>طلبات الويفي</h1>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+    <main dir="rtl" className="wf">
+      <style>{css}</style>
+
+      <div className="topbar">
+        <div className="brand">
+          <h1>طلبات الويفي</h1>
           {me && (
-            <span>
-              {me.role === "admin" ? "الأدمن" : me.username}
-            </span>
+            <small>{isAdmin ? "الأدمن" : `مرحبًا ${me.username}`}</small>
           )}
-          <span
-            style={{
-              background: "#eff6ff",
-              border: "1px solid #bfdbfe",
-              borderRadius: 6,
-              padding: "4px 10px",
-              fontSize: 14,
-            }}
-          >
-            {me?.role === "admin" && stock.total !== undefined
-              ? `المودمات: الإجمالي ${stock.total} — المتبقي ${stock.remaining}`
+        </div>
+        <div className="actions">
+          <span className="pill">
+            {isAdmin && stock.total !== undefined
+              ? `المودمات: ${stock.total} إجمالي · ${stock.remaining} متبقي`
               : `المودمات المتبقية: ${stock.remaining}`}
           </span>
-          {me?.role === "admin" && (
-            <button
-              type="button"
-              onClick={() => setImportOpen(true)}
-              style={{ padding: "4px 12px", cursor: "pointer" }}
-            >
+          {isAdmin && (
+            <button type="button" className="btn" onClick={() => setImportOpen(true)}>
               + إضافة قائمة مودمات
             </button>
           )}
-          <a href="/modem-codes">قائمة المودمات</a>
-          {me?.role === "admin" && <a href="/users">إدارة المستخدمين</a>}
-          <form method="POST" action="/api/logout">
-            <button type="submit" style={{ padding: "4px 12px" }}>
+          <a className="btn" href="/modem-codes">
+            قائمة المودمات
+          </a>
+          {isAdmin && (
+            <a className="btn" href="/users">
+              المستخدمون
+            </a>
+          )}
+          <form method="POST" action="/api/logout" style={{ display: "inline" }}>
+            <button type="submit" className="btn">
               خروج
             </button>
           </form>
         </div>
       </div>
 
-      {me?.role === "admin" && (
+      <div className="stats">
         <button
           type="button"
-          onClick={() => setAddOpen((open) => !open)}
-          aria-expanded={addOpen}
-          style={{
-            width: "100%",
-            textAlign: "right",
-            padding: "12px 16px",
-            marginBottom: addOpen ? 8 : 16,
-            fontSize: 16,
-            fontWeight: 600,
-            cursor: "pointer",
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            background: addOpen ? "#eff6ff" : "#f9fafb",
-          }}
+          className={`stat${statusFilter === "" ? " active" : ""}`}
+          onClick={() => setStatusFilter("")}
         >
-          {addOpen ? "▾ إضافة طلب جديد" : "▸ إضافة طلب جديد"}
+          <b>{visibleRequests.length}</b>
+          <span>كل الطلبات</span>
         </button>
-      )}
-
-      {me?.role === "admin" && (
-        <form
-          onSubmit={onSubmit}
-          style={{ ...box, display: addOpen ? "grid" : "none", gap: 12 }}
-        >
-          <input
-            name="customer_name"
-            placeholder="اسم العميل"
-            required
-            style={input}
-          />
-          <input
-            name="beneficiary_number"
-            placeholder="رقم المستفيد"
-            required
-            style={input}
-          />
-          <input name="phone" placeholder="رقم الجوال (اختياري)" style={input} />
-          <input name="phone2" placeholder="رقم الجوال الثاني (اختياري)" style={input} />
-          <input name="national_id" placeholder="الرقم الوطني (اختياري)" style={input} />
-          <input name="code1" placeholder="الكود العلوي على داية موريتل (اختياري)" style={input} />
-          <input name="code2" placeholder="الكود السفلي (اختياري)" style={input} />
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={() => setPickFor("new")}
-              style={{ ...input, flex: 1, textAlign: "right", cursor: "pointer" }}
-            >
-              {newModem ? `المودم: ${newModem}` : "اختيار كود المودم (اختياري)"}
-            </button>
-            {newModem && (
-              <button
-                type="button"
-                onClick={() => setNewModem("")}
-                style={{ padding: 10, cursor: "pointer" }}
-              >
-                إزالة
-              </button>
-            )}
-          </div>
-          <input name="region" placeholder="المنطقة" style={input} />
-          <select name="assigned_to" defaultValue="" style={input}>
-            <option value="">إسناد الطلب إلى... (اختياري)</option>
-            {people.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <textarea
-            name="notes"
-            placeholder="ملاحظات (اختياري)"
-            rows={3}
-            style={input}
-          />
-
-          {FILE_FIELDS.map((f) => (
-            <label key={f.field} style={{ display: "grid", gap: 6 }}>
-              <strong>{f.label} *</strong>
-              <input
-                type="file"
-                name={f.field}
-                required
-                accept="image/*,application/pdf"
-              />
-            </label>
-          ))}
-
-          <button type="submit" disabled={saving} style={input}>
-            {saving ? "جارٍ الحفظ..." : "حفظ الطلب"}
+        {Object.entries(STATUS_LABELS).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={`stat${statusFilter === value ? " active" : ""}`}
+            onClick={() => setStatusFilter(statusFilter === value ? "" : value)}
+          >
+            <b>{countOf(value)}</b>
+            <span>{label}</span>
           </button>
-          {message && <p style={{ margin: 0 }}>{message}</p>}
-        </form>
-      )}
+        ))}
+      </div>
 
-      <h2>الطلبات</h2>
-      {loading && <p>جارٍ التحميل...</p>}
-      {!loading && requests.length === 0 && <p>لا توجد طلبات بعد.</p>}
-
-      {me?.role === "admin" && requests.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-            alignItems: "center",
-            marginBottom: 12,
-          }}
-        >
+      <div className="toolbar">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="بحث بالاسم أو الرقم الوطني أو الهاتف أو الكود أو رقم الطلب..."
+        />
+        {isAdmin && (
           <select
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
-            style={{ padding: 6 }}
           >
-            <option value="">عرض: كل الطلبات</option>
+            <option value="">كل المستخدمين</option>
             <option value="__none__">غير المسندة</option>
             {people.map((name) => (
               <option key={name} value={name}>
@@ -636,290 +617,312 @@ export default function Home() {
               </option>
             ))}
           </select>
+        )}
+        {isAdmin && (
+          <label className="checkall">
+            <input
+              type="checkbox"
+              checked={
+                shownRequests.length > 0 &&
+                shownRequests.every((r) => selected.includes(r.id))
+              }
+              onChange={(e) =>
+                setSelected(e.target.checked ? shownRequests.map((r) => r.id) : [])
+              }
+            />
+            تحديد الكل ({shownRequests.length})
+          </label>
+        )}
+        {isAdmin && (
+          <button
+            type="button"
+            className="btn primary"
+            aria-expanded={addOpen}
+            onClick={() => setAddOpen((open) => !open)}
+          >
+            {addOpen ? "إغلاق النموذج ▴" : "+ طلب جديد"}
+          </button>
+        )}
+      </div>
 
-          {selected.length > 0 && (
-            <>
-              <strong>المحدد: {selected.length}</strong>
-              <button
-                type="button"
-                disabled={bulkBusy}
-                onClick={() => {
-                  setAssignTo("");
-                  setAssignIds(selected);
-                }}
-                style={{ padding: "6px 12px", cursor: "pointer" }}
-              >
-                إسناد المحدد
-              </button>
-              <button
-                type="button"
-                disabled={bulkBusy}
-                onClick={() => askDelete(selected)}
-                style={{ padding: "6px 12px", cursor: "pointer", color: "crimson" }}
-              >
-                حذف المحدد
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelected([])}
-                style={{ padding: "6px 12px", cursor: "pointer" }}
-              >
-                إلغاء التحديد
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {requests.length > 0 && (
-        <div
-          style={{
-            overflowX: "auto",
-            border: "1px solid #ddd",
-            borderRadius: 8,
-          }}
+      {isAdmin && (
+        <form
+          onSubmit={onSubmit}
+          className="panel"
+          style={{ display: addOpen ? "block" : "none" }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={th}>
-                  {me?.role === "admin" && (
-                    <input
-                      type="checkbox"
-                      aria-label="تحديد الكل"
-                      checked={
-                        visibleRequests.length > 0 &&
-                        visibleRequests.every((r) => selected.includes(r.id))
-                      }
-                      onChange={(e) =>
-                        setSelected(e.target.checked ? visibleRequests.map((r) => r.id) : [])
-                      }
-                      style={{ marginInlineEnd: 6 }}
-                    />
-                  )}
-                  الرقم
-                </th>
-                <th style={th}>الاسم</th>
-                <th style={th}>رقم المستفيد</th>
-                <th style={th}>الرقم الوطني</th>
-                <th style={th}>الجوال</th>
-                <th style={th}>الأكواد</th>
-                <th style={th}>المرفقات</th>
-                <th style={th}>كود المودم</th>
-                <th style={th}>المنطقة</th>
-                <th style={th}>الملاحظات</th>
-                {me?.role === "admin" && <th style={th}>مسند إلى</th>}
-                <th style={th}>الحالة</th>
-                <th style={th}>مشاركة</th>
-                {me?.can_edit && <th style={th}>إجراء</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRequests.map((r) => (
-                <tr key={r.id}>
-                  <td style={{ ...td, fontWeight: 700 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {me?.role === "admin" && (
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(r.id)}
-                          onChange={() => toggleOne(r.id)}
-                        />
-                      )}
-                      <span>#{r.request_number}</span>
-                    </div>
-                    {me?.role === "admin" && (
-                      <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAssignTo(r.assigned_to ?? "");
-                            setAssignIds([r.id]);
-                          }}
-                          style={{ padding: "1px 8px", fontSize: 12, cursor: "pointer" }}
-                        >
-                          إسناد
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => askDelete([r.id])}
-                          style={{
-                            padding: "1px 8px",
-                            fontSize: 12,
-                            cursor: "pointer",
-                            color: "crimson",
-                          }}
-                        >
-                          حذف
-                        </button>
-                      </div>
-                    )}
-                    {r.source === "whatsapp" && (
-                      <div
-                        style={{
-                          marginTop: 4,
-                          fontSize: 11,
-                          fontWeight: 400,
-                          color: "#15803d",
-                          background: "#dcfce7",
-                          borderRadius: 4,
-                          padding: "1px 6px",
-                          display: "inline-block",
-                        }}
-                      >
-                        واتساب
-                      </div>
-                    )}
-                  </td>
-                  <td style={td}>{r.customer_name}</td>
-                  <td style={td}>{r.beneficiary_number ?? "—"}</td>
-                  <td style={td}>{r.national_id ?? "—"}</td>
-                  <td style={td}>
-                    <div>{r.phone ?? "—"}</div>
-                    {r.phone2 && <div>{r.phone2}</div>}
-                  </td>
-                  <td style={td}>
-                    {r.code1 || r.code2 ? (
-                      <>
-                        <div>{r.code1 ?? "—"}</div>
-                        <div>{r.code2 ?? "—"}</div>
-                      </>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td style={td}>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {r.attachments.map((a, i) =>
-                        a.url ? (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() =>
-                              setPreview({
-                                url: a.url as string,
-                                label: FILE_LABELS[a.type] ?? "مرفق",
-                                name: a.name,
-                              })
-                            }
-                            style={{
-                              border: "1px solid #ddd",
-                              borderRadius: 6,
-                              padding: "2px 8px",
-                              fontSize: 12,
-                              whiteSpace: "nowrap",
-                              background: "#fff",
-                              cursor: "pointer",
-                            }}
-                          >
-                            {FILE_LABELS[a.type] ?? "مرفق"}
-                          </button>
-                        ) : (
-                          <span key={i} style={{ fontSize: 12 }}>
-                            {FILE_LABELS[a.type] ?? a.name}
-                          </span>
-                        )
-                      )}
-                    </div>
-                  </td>
-                  <td style={td}>
-                    <div>{r.modem_code ?? "—"}</div>
-                    {me?.can_edit && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPickFor({
-                            id: r.id,
-                            number: r.request_number,
-                            current: r.modem_code,
-                          })
-                        }
-                        style={{ marginTop: 4, padding: "2px 8px", fontSize: 12 }}
-                      >
-                        {r.modem_code ? "تغيير" : "اختيار"}
-                      </button>
-                    )}
-                  </td>
-                  <td style={td}>{r.region ?? "—"}</td>
-                  <td style={{ ...td, maxWidth: 240 }}>
-                    <div style={{ whiteSpace: "pre-wrap" }}>
-                      {r.notes ?? "—"}
-                    </div>
-                    {me?.can_add_note && (
-                      <button
-                        type="button"
-                        onClick={() => startNote(r)}
-                        style={{ marginTop: 6, padding: "2px 8px", fontSize: 12 }}
-                      >
-                        + ملاحظة
-                      </button>
-                    )}
-                  </td>
-                  {me?.role === "admin" && (
-                    <td style={td}>
-                      {r.assigned_to ?? (
-                        <span style={{ color: "#b45309" }}>غير مسند</span>
-                      )}
-                    </td>
-                  )}
-                  <td style={{ ...td, minWidth: 150 }}>
-                    <select
-                      value={r.status}
-                      disabled={!me?.can_change_status}
-                      onChange={(e) => changeStatus(r.id, e.target.value)}
-                      style={{ padding: 4, width: "100%", marginBottom: 6 }}
-                    >
-                      {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                    <MiniProgress status={r.status} />
-                  </td>
-                  <td style={td}>
-                    <div style={{ display: "grid", gap: 4 }}>
-                      <button
-                        type="button"
-                        onClick={() => copySummary(r)}
-                        style={{ padding: "2px 8px", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}
-                      >
-                        نسخ الملخص
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => shareToWhatsApp(r)}
-                        style={{
-                          padding: "2px 8px",
-                          fontSize: 12,
-                          cursor: "pointer",
-                          whiteSpace: "nowrap",
-                          background: "#dcfce7",
-                          border: "1px solid #86efac",
-                          borderRadius: 4,
-                        }}
-                      >
-                        إرسال واتساب
-                      </button>
-                    </div>
-                  </td>
-                  {me?.can_edit && (
-                    <td style={td}>
-                      <button
-                        type="button"
-                        onClick={() => startEdit(r)}
-                        style={{ padding: "4px 12px", cursor: "pointer" }}
-                      >
-                        تعديل
-                      </button>
-                    </td>
-                  )}
-                </tr>
+          <h2>إضافة طلب جديد</h2>
+          <div className="formgrid">
+            <input name="customer_name" placeholder="اسم العميل" required />
+            <input name="beneficiary_number" placeholder="رقم المستفيد" required />
+            <input name="national_id" placeholder="الرقم الوطني (اختياري)" />
+            <input name="phone" placeholder="رقم الجوال (اختياري)" />
+            <input name="phone2" placeholder="رقم الجوال الثاني (اختياري)" />
+            <input name="region" placeholder="المنطقة" />
+            <input name="code1" placeholder="الكود العلوي (اختياري)" />
+            <input name="code2" placeholder="الكود السفلي (اختياري)" />
+            <select name="assigned_to" defaultValue="">
+              <option value="">إسناد الطلب إلى... (اختياري)</option>
+              {people.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
               ))}
-            </tbody>
-          </table>
+            </select>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setPickFor("new")}
+                style={{ flex: 1, justifyContent: "flex-start", padding: 10 }}
+              >
+                {newModem ? (
+                  <>
+                    المودم: <span className="ltr">{newModem}</span>
+                  </>
+                ) : (
+                  "اختيار كود المودم (اختياري)"
+                )}
+              </button>
+              {newModem && (
+                <button type="button" className="btn" onClick={() => setNewModem("")}>
+                  إزالة
+                </button>
+              )}
+            </div>
+            <textarea name="notes" placeholder="ملاحظات (اختياري)" rows={3} className="full" />
+            {FILE_FIELDS.map((f) => (
+              <label key={f.field}>
+                <strong>{f.label} *</strong>
+                <input type="file" name={f.field} required accept="image/*,application/pdf" />
+              </label>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14 }}>
+            <button type="submit" disabled={saving} className="btn primary" style={{ padding: "10px 24px" }}>
+              {saving ? "جارٍ الحفظ..." : "حفظ الطلب"}
+            </button>
+            {message && <span style={{ color: "var(--muted)" }}>{message}</span>}
+          </div>
+        </form>
+      )}
+
+      {isAdmin && selected.length > 0 && (
+        <div className="selbar">
+          <strong>المحدد: {selected.length}</strong>
+          <button
+            type="button"
+            className="btn"
+            disabled={bulkBusy}
+            onClick={() => {
+              setAssignTo("");
+              setAssignIds(selected);
+            }}
+          >
+            إسناد المحدد
+          </button>
+          <button
+            type="button"
+            className="btn danger"
+            disabled={bulkBusy}
+            onClick={() => askDelete(selected)}
+          >
+            حذف المحدد
+          </button>
+          <button type="button" className="btn" onClick={() => setSelected([])}>
+            إلغاء التحديد
+          </button>
         </div>
       )}
+
+      {loading && <div className="empty">جارٍ التحميل...</div>}
+      {!loading && requests.length === 0 && (
+        <div className="empty">لا توجد طلبات بعد.</div>
+      )}
+      {!loading && requests.length > 0 && shownRequests.length === 0 && (
+        <div className="empty">لا توجد طلبات تطابق البحث أو الفلتر.</div>
+      )}
+
+      {shownRequests.map((r) => (
+        <div key={r.id} className={`card${selected.includes(r.id) ? " sel" : ""}`}>
+          <div className="card-main">
+            <div>
+              <div className="num">
+                {isAdmin && (
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(r.id)}
+                    onChange={() => toggleOne(r.id)}
+                    aria-label={`تحديد الطلب ${r.request_number}`}
+                  />
+                )}
+                <span>#{r.request_number}</span>
+              </div>
+              {r.source === "whatsapp" && <span className="badge">واتساب</span>}
+              <div className="sub">{r.created_at.slice(0, 10)}</div>
+            </div>
+
+            <div>
+              <div className="cap">العميل</div>
+              <div className="val strong">{r.customer_name}</div>
+              <div className="sub">المنطقة: {r.region ?? "—"}</div>
+              <div className="sub">
+                الرقم الوطني: <span className="ltr">{r.national_id ?? "—"}</span>
+              </div>
+              {r.beneficiary_number && (
+                <div className="sub">
+                  رقم المستفيد: <span className="ltr">{r.beneficiary_number}</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="cap">الهاتف</div>
+              <div className="val">
+                <span className="ltr">{r.phone ?? "—"}</span>
+              </div>
+              {r.phone2 && (
+                <div className="val">
+                  <span className="ltr">{r.phone2}</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="cap">كود المودم</div>
+              <div className="val strong">
+                {r.modem_code ? <span className="ltr">{r.modem_code}</span> : "—"}
+              </div>
+              {me?.can_edit && (
+                <button
+                  type="button"
+                  className="btn sm"
+                  style={{ marginTop: 4 }}
+                  onClick={() =>
+                    setPickFor({
+                      id: r.id,
+                      number: r.request_number,
+                      current: r.modem_code,
+                    })
+                  }
+                >
+                  {r.modem_code ? "تغيير" : "اختيار مودم"}
+                </button>
+              )}
+              <div className="sub" style={{ marginTop: 6 }}>
+                الكود العلوي: <span className="ltr">{r.code1 ?? "—"}</span>
+              </div>
+              <div className="sub">
+                الكود السفلي: <span className="ltr">{r.code2 ?? "—"}</span>
+              </div>
+            </div>
+
+            <div>
+              <div className="cap">المرفقات</div>
+              <div className="chips">
+                {r.attachments.length === 0 && <span className="sub">—</span>}
+                {r.attachments.map((a, i) =>
+                  a.url ? (
+                    <button
+                      key={i}
+                      type="button"
+                      className="chip"
+                      onClick={() =>
+                        setPreview({
+                          url: a.url as string,
+                          label: FILE_LABELS[a.type] ?? "مرفق",
+                          name: a.name,
+                        })
+                      }
+                    >
+                      🖼 {FILE_LABELS[a.type] ?? "مرفق"}
+                    </button>
+                  ) : (
+                    <span key={i} className="sub">
+                      {FILE_LABELS[a.type] ?? a.name}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+
+            <div className="status">
+              <div className="cap">الحالة</div>
+              <select
+                value={r.status}
+                disabled={!me?.can_change_status}
+                onChange={(e) => changeStatus(r.id, e.target.value)}
+              >
+                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <MiniProgress status={r.status} />
+            </div>
+          </div>
+
+          {r.notes && (
+            <div className="note">
+              <span className="cap" style={{ display: "block" }}>
+                ملاحظات
+              </span>
+              {r.notes}
+            </div>
+          )}
+
+          <div className="card-foot">
+            <div className="foot-actions">
+              {isAdmin && (
+                <span className="sub" style={{ marginInlineEnd: 6 }}>
+                  مسند إلى:{" "}
+                  {r.assigned_to ? (
+                    <strong style={{ color: "#111827" }}>{r.assigned_to}</strong>
+                  ) : (
+                    <span style={{ color: "#b45309" }}>غير مسند</span>
+                  )}
+                </span>
+              )}
+              {me?.can_add_note && (
+                <button type="button" className="btn sm" onClick={() => startNote(r)}>
+                  + ملاحظة
+                </button>
+              )}
+              {me?.can_edit && (
+                <button type="button" className="btn sm" onClick={() => startEdit(r)}>
+                  تعديل
+                </button>
+              )}
+            </div>
+            <div className="foot-actions">
+              <button type="button" className="btn sm" onClick={() => copySummary(r)}>
+                نسخ الملخص
+              </button>
+              <button type="button" className="btn sm whatsapp" onClick={() => shareToWhatsApp(r)}>
+                إرسال واتساب
+              </button>
+              {isAdmin && (
+                <>
+                  <button
+                    type="button"
+                    className="btn sm"
+                    onClick={() => {
+                      setAssignTo(r.assigned_to ?? "");
+                      setAssignIds([r.id]);
+                    }}
+                  >
+                    إسناد
+                  </button>
+                  <button type="button" className="btn sm danger" onClick={() => askDelete([r.id])}>
+                    حذف
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
 
       {assignIds && (
         <div
