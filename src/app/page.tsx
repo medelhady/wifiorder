@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ModemPicker, { type Modem } from "@/components/ModemPicker";
 import ModemImportModal from "@/components/ModemImportModal";
 import ImageZoom from "@/components/ImageZoom";
@@ -62,6 +62,30 @@ const FILE_FIELDS = [
   { field: "id_card", label: "إرفاق بطاقة التعريف" },
   { field: "mauritel_copy", label: "إرفاق صورة من داية موريتل" },
 ];
+
+// A phone photo can be several megabytes and the server refuses a body over about 4.5MB, so a picture
+// is shrunk first (longest side 2000px, JPEG). A PDF, or a picture the browser cannot decode, goes as is.
+async function prepareFile(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.size < 1_200_000) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.85)
+    );
+    if (!blob || blob.size >= file.size) return file;
+    const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+    return new File([blob], name, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
 
 const FILE_LABELS: Record<string, string> = {
   id_card: "بطاقة التعريف",
@@ -161,6 +185,8 @@ const css = `
 .wf .chips { display:flex; flex-wrap:wrap; gap:6px; }
 .wf .chip { padding:4px 12px; font-size:12px; border:1px solid var(--bd); border-radius:999px; background:#fff; cursor:pointer; }
 .wf .chip:hover { background:#eff6ff; border-color:#bfdbfe; }
+.wf .chip.add { border-style:dashed; color:#1d4ed8; background:#f8fafc; }
+.wf .chip.add:disabled { opacity:.6; cursor:wait; }
 .wf .note { white-space:pre-wrap; font-size:14px; padding:10px 16px; border-top:1px dashed var(--bd); background:#fffbeb; }
 .wf .status select { width:100%; padding:7px 8px; border:1px solid var(--bd); border-radius:8px; background:#fff; margin-bottom:8px; font-size:14px; }
 .wf .empty { text-align:center; color:var(--muted); padding:36px 12px; background:#fff; border:1px dashed var(--bd); border-radius:12px; }
@@ -222,6 +248,10 @@ export default function Home() {
     label: string;
     name: string;
   } | null>(null);
+
+  const fileInput = useRef<HTMLInputElement>(null);
+  const attachTarget = useRef<string | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   const [noteId, setNoteId] = useState<string | null>(null);
   const [noteNumber, setNoteNumber] = useState<number | null>(null);
@@ -352,6 +382,39 @@ export default function Home() {
       alert(json.error ?? "حدث خطأ");
     }
     setPickFor(null);
+    load();
+  }
+
+  function pickFiles(id: string) {
+    attachTarget.current = id;
+    fileInput.current?.click();
+  }
+
+  async function onFilesChosen(e: React.ChangeEvent<HTMLInputElement>) {
+    const id = attachTarget.current;
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!id || files.length === 0) return;
+
+    setUploadingId(id);
+    let added = 0;
+    const errors: string[] = [];
+    for (const original of files) {
+      try {
+        const file = await prepareFile(original);
+        const body = new FormData();
+        body.append("file", file, file.name);
+        const res = await fetch(`/api/requests/${id}/attachments`, { method: "POST", body });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) added += 1;
+        else errors.push(`${original.name}: ${json.error ?? "فشل الرفع"}`);
+      } catch {
+        errors.push(`${original.name}: فشل الرفع`);
+      }
+    }
+    setUploadingId(null);
+    if (added > 0) showToast(added === 1 ? "تم إرفاق الملف" : `تم إرفاق ${added} ملفات`);
+    if (errors.length > 0) alert(errors.join("\n"));
     load();
   }
 
@@ -553,6 +616,14 @@ export default function Home() {
   return (
     <main dir="rtl" className="wf">
       <style>{css}</style>
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*,application/pdf"
+        multiple
+        hidden
+        onChange={onFilesChosen}
+      />
 
       <div className="topbar">
         <div className="brand">
@@ -857,27 +928,40 @@ export default function Home() {
               <div className="cap">المرفقات</div>
               <div className="chips">
                 {r.attachments.length === 0 && <span className="sub">—</span>}
-                {r.attachments.map((a, i) =>
-                  a.url ? (
+                {r.attachments.map((a, i) => {
+                  const label = FILE_LABELS[a.type] ?? a.name ?? "مرفق";
+                  const short = label.length > 18 ? `${label.slice(0, 16)}…` : label;
+                  return a.url ? (
                     <button
                       key={i}
                       type="button"
                       className="chip"
+                      title={label}
                       onClick={() =>
                         setPreview({
                           url: a.url as string,
-                          label: FILE_LABELS[a.type] ?? "مرفق",
+                          label,
                           name: a.name,
                         })
                       }
                     >
-                      🖼 {FILE_LABELS[a.type] ?? "مرفق"}
+                      {FILE_LABELS[a.type] ? "🖼" : "📎"} {short}
                     </button>
                   ) : (
                     <span key={i} className="sub">
-                      {FILE_LABELS[a.type] ?? a.name}
+                      {short}
                     </span>
-                  )
+                  );
+                })}
+                {(isAdmin || r.assigned_to === me?.username) && (
+                  <button
+                    type="button"
+                    className="chip add"
+                    disabled={uploadingId === r.id}
+                    onClick={() => pickFiles(r.id)}
+                  >
+                    {uploadingId === r.id ? "جارٍ الرفع…" : "+ إرفاق"}
+                  </button>
                 )}
               </div>
             </div>
