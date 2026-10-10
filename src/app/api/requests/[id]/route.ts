@@ -70,8 +70,8 @@ export async function PATCH(
     return NextResponse.json({ ok: true });
   }
 
-  // 1) تغيير الحالة
-  if (body.status !== undefined) {
+  // 1) تغيير الحالة (ومعها رقم الحساب عند "تم إنشاء الحساب")
+  if (body.status !== undefined || body.account_number !== undefined) {
     if (!user.can_change_status) {
       return NextResponse.json(
         { error: "ليس لديك صلاحية تغيير الحالة" },
@@ -79,15 +79,38 @@ export async function PATCH(
       );
     }
 
-    const status = String(body.status);
+    const { data: current } = await supabase
+      .from("wifi_requests")
+      .select("status, account_number")
+      .eq("id", id)
+      .single();
+
+    const status = body.status !== undefined ? String(body.status) : current?.status ?? "new";
     if (!STATUSES.includes(status)) {
       return NextResponse.json({ error: "حالة غير صحيحة" }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from("wifi_requests")
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", id);
+    const update: Record<string, unknown> = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+    const notes: string[] = [];
+
+    if (body.account_number !== undefined) {
+      const account = String(body.account_number).trim();
+      if (!account) {
+        return NextResponse.json({ error: "اكتب رقم الحساب" }, { status: 400 });
+      }
+      update.account_number = account;
+      notes.push(`رقم الحساب ${account}`);
+    } else if (status === "account_created" && !current?.account_number) {
+      return NextResponse.json(
+        { error: "اكتب رقم الحساب عند اختيار \"تم إنشاء الحساب\"" },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase.from("wifi_requests").update(update).eq("id", id);
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -95,7 +118,7 @@ export async function PATCH(
     await supabase.from("wifi_request_history").insert({
       request_id: id,
       status,
-      note: `تغيير الحالة بواسطة ${user.username}`,
+      note: `تغيير الحالة بواسطة ${user.username}${notes.length ? ` — ${notes.join("، ")}` : ""}`,
     });
 
     return NextResponse.json({ ok: true });

@@ -23,6 +23,7 @@ type WifiRequest = {
   status: string;
   source: string | null;
   assigned_to: string | null;
+  account_number: string | null;
   attachments: Attachment[];
   created_at: string;
 };
@@ -185,6 +186,8 @@ const css = `
 .wf .chips { display:flex; flex-wrap:wrap; gap:6px; }
 .wf .chip { padding:4px 12px; font-size:12px; border:1px solid var(--bd); border-radius:999px; background:#fff; cursor:pointer; }
 .wf .chip:hover { background:#eff6ff; border-color:#bfdbfe; }
+.wf .status-head { display:flex; align-items:center; gap:8px; }
+.wf .acc-number { font-size:16px; font-weight:800; color:#111827; }
 .wf .chip.add { border-style:dashed; color:#1d4ed8; background:#f8fafc; }
 .wf .chip.add:disabled { opacity:.6; cursor:wait; }
 .wf .note { white-space:pre-wrap; font-size:14px; padding:10px 16px; border-top:1px dashed var(--bd); background:#fffbeb; }
@@ -252,6 +255,16 @@ export default function Home() {
   const fileInput = useRef<HTMLInputElement>(null);
   const attachTarget = useRef<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  // The popup asking for the account number when a request moves to "تم إنشاء الحساب".
+  const [accountFor, setAccountFor] = useState<{
+    id: string;
+    number: number;
+    status: string | null;
+  } | null>(null);
+  const [accountValue, setAccountValue] = useState("");
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [accountError, setAccountError] = useState("");
 
   const [noteId, setNoteId] = useState<string | null>(null);
   const [noteNumber, setNoteNumber] = useState<number | null>(null);
@@ -368,6 +381,36 @@ export default function Home() {
       const json = await res.json();
       alert(json.error ?? "حدث خطأ");
     }
+    load();
+  }
+
+  function askAccount(r: WifiRequest, status: string | null) {
+    setAccountFor({ id: r.id, number: r.request_number, status });
+    setAccountValue(r.account_number ?? "");
+    setAccountError("");
+  }
+
+  async function saveAccount(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!accountFor) return;
+    setAccountSaving(true);
+    setAccountError("");
+    const res = await fetch(`/api/requests/${accountFor.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(accountFor.status ? { status: accountFor.status } : {}),
+        account_number: accountValue,
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setAccountSaving(false);
+    if (!res.ok) {
+      setAccountError(json.error ?? "حدث خطأ");
+      return;
+    }
+    setAccountFor(null);
+    showToast("تم حفظ رقم الحساب");
     load();
   }
 
@@ -967,11 +1010,30 @@ export default function Home() {
             </div>
 
             <div className="status">
-              <div className="cap">الحالة</div>
+              <div className="cap status-head">
+                <span>الحالة</span>
+                {r.account_number && (
+                  <>
+                    <strong
+                      className="acc-number ltr"
+                      title={me?.can_change_status ? "تعديل رقم الحساب" : "رقم الحساب"}
+                      style={{ cursor: me?.can_change_status ? "pointer" : "default" }}
+                      onClick={() => me?.can_change_status && askAccount(r, null)}
+                    >
+                      {r.account_number}
+                    </strong>
+                    <CopyButton value={r.account_number} label="رقم الحساب" />
+                  </>
+                )}
+              </div>
               <select
                 value={r.status}
                 disabled={!me?.can_change_status}
-                onChange={(e) => changeStatus(r.id, e.target.value)}
+                onChange={(e) =>
+                  e.target.value === "account_created"
+                    ? askAccount(r, "account_created")
+                    : changeStatus(r.id, e.target.value)
+                }
               >
                 {Object.entries(STATUS_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -1219,6 +1281,57 @@ export default function Home() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {accountFor && (
+        <div
+          onClick={() => setAccountFor(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            zIndex: 10,
+          }}
+        >
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={saveAccount}
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 20,
+              width: "100%",
+              maxWidth: 380,
+              display: "grid",
+              gap: 12,
+            }}
+          >
+            <h2 style={{ margin: 0 }}>رقم الحساب للطلب #{accountFor.number}</h2>
+            <input
+              autoFocus
+              required
+              dir="ltr"
+              inputMode="numeric"
+              value={accountValue}
+              onChange={(e) => setAccountValue(e.target.value)}
+              placeholder="اكتب رقم الحساب"
+              style={{ ...input, fontWeight: 700 }}
+            />
+            {accountError && <p style={{ margin: 0, color: "crimson" }}>{accountError}</p>}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="submit" disabled={accountSaving} style={{ ...input, flex: 1 }}>
+                {accountSaving ? "جارٍ الحفظ..." : "حفظ"}
+              </button>
+              <button type="button" onClick={() => setAccountFor(null)} style={{ ...input, flex: 1 }}>
+                إلغاء
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
