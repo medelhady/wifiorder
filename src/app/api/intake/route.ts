@@ -143,7 +143,44 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const phone = digits(new URL(request.url).searchParams.get("phone") ?? "");
+  const params = new URL(request.url).searchParams;
+
+  // طلب واحد برقمه، مع روابط مؤقتة لمرفقاته: GET /api/intake?number=10
+  if (params.has("number")) {
+    const number = Number(params.get("number"));
+    if (!Number.isInteger(number) || number <= 0) {
+      return NextResponse.json({ error: "رقم الطلب غير صحيح" }, { status: 400 });
+    }
+
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("wifi_requests")
+      .select(
+        "request_number, status, customer_name, national_id, phone, phone2, code1, code2, region, attachments"
+      )
+      .eq("request_number", number)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!data) {
+      return NextResponse.json({ request: null });
+    }
+
+    const attachments = await Promise.all(
+      ((data.attachments ?? []) as StoredAttachment[]).map(async (a) => {
+        const { data: signed } = await supabase.storage
+          .from(BUCKET)
+          .createSignedUrl(a.path, 3600);
+        return { type: a.type, name: a.name, url: signed?.signedUrl ?? null };
+      })
+    );
+
+    return NextResponse.json({ request: { ...data, attachments } });
+  }
+
+  const phone = digits(params.get("phone") ?? "");
   if (!phone) {
     return NextResponse.json({ error: "phone مطلوب" }, { status: 400 });
   }
